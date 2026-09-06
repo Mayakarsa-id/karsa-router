@@ -116,3 +116,48 @@ td {
 tr:nth-child(even) td { background: #f2f2f2; }
 ul, ol { padding-left: 22px; }
 hr { border: none; border-top: 3px solid #000; margin: 20px 0; }
+
+/* dark theme — respects system and manual toggle */
+@media (prefers-color-scheme: dark) {
+  html { background: #0a0a0a; }
+  body { background: #0a0a0a; color: #f2f2f2; }
+  a { color: #f2f2f2; }
+  a:hover { background: #fff; color: #000; }
+  nav { border-color: #fff; background: #0a0a0a; }
+  nav a { color: #f2f2f2; }
+  nav a:hover { background: #fff; color: #000; border-color: #fff; }
+  h2 { border-bottom-color: #fff; }
+  h3 { border-left-color: #fff; }
+  code { background: #fff; color: #000; }
+  form { border-color: #fff; background: #0a0a0a; }
+  input, select { border-color: #fff; background: #0a0a0a; color: #f2f2f2; }
+  input[readonly] { background: #1a1a1a; }
+  input:focus, select:focus { outline-color: #fff; }
+  button { border-color: #fff; background: #fff; color: #000; }
+  button:hover { background: #000; color: #fff; border-color: #fff; }
+  table { border-color: #fff; background: #0a0a0a; }
+  thead tr { background: #fff; color: #000; }
+  td { border-color: #fff; }
+  tr:nth-child(even) td { background: #1a1a1a; }
+  hr { border-top-color: #fff; }
+}
+html.dark { background: #0a0a0a; }
+html.dark body { background: #0a0a0a; color: #f2f2f2; }
+html.dark a { color: #f2f2f2; }
+html.dark a:hover { background: #fff; color: #000; }
+html.dark nav { border-color: #fff; background: #0a0a0a; }
+html.dark nav a { color: #f2f2f2; }
+html.dark nav a:hover { background: #fff; color: #000; border-color: #fff; }
+html.dark h2 { border-bottom-color: #fff; }
+html.dark h3 { border-left-color: #fff; }
+html.dark code { background: #fff; color: #000; }
+html.dark form { border-color: #fff; background: #0a0a0a; }
+html.dark input, html.dark select { border-color: #fff; background: #0a0a0a; color: #f2f2f2; }
+html.dark input[readonly] { background: #1a1a1a; }
+html.dark button { border-color: #fff; background: #fff; color: #000; }
+html.dark button:hover { background: #000; color: #fff; border-color: #fff; }
+html.dark table { border-color: #fff; background: #0a0a0a; }
+html.dark thead tr { background: #fff; color: #000; }
+html.dark td { border-color: #fff; }
+html.dark tr:nth-child(even) td { background: #1a1a1a; }
+html.dark hr { border-top-color: #fff; }
