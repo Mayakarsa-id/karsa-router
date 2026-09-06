@@ -231,38 +231,4 @@ app.get('/delete', async (c) => {
   return c.redirect('/users')
 })
 
-app.get('/register', (c) => {
-  return c.html(
-    <Layout user={null}>
-      <h2>Register</h2>
-      <form method="post" action="/register">
-        <input name="Username" placeholder="Username" required />
-        <button type="submit">Register</button>
-      </form>
-    </Layout>
-  )
-})
-
-app.post('/register', async (c) => {
-  const { Username } = await c.req.parseBody()
-  const username = Username as string
-  const db = getDb(c.env)
-
-  const existing = await db.execQuery('SELECT * FROM Users WHERE Username = ?', username)
-  if (existing.length > 0) return c.redirect('/register?error=exists')
-
-  const secret = generateBase32Secret()
-  await db.execRun('INSERT INTO Users (Username, TotpSecret) VALUES (?, ?)', username, secret)
-
-  const apiKey = `sk-kr-${crypto.randomUUID().replace(/-/g, '')}`
-  await db.execRun('UPDATE Users SET APIKEY = ? WHERE Username = ?', apiKey, username)
-
-  const token = crypto.randomUUID()
-  const expiresAt = new Date(Date.now() + 86400000).toISOString()
-  await db.execRun('INSERT INTO Sessions (Token, Username, ExpiresAt) VALUES (?, ?, ?)', token, username, expiresAt)
-  setCookie(c, 'session', token, { expires: new Date(expiresAt), httpOnly: true, path: '/' })
-
-  return c.redirect('/users')
-})
-
 export default app
