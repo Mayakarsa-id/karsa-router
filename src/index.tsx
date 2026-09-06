@@ -38,7 +38,7 @@ app.use(async (c, next) => {
 })
 
 // Root Redirect
-app.get('/', (c) => c.redirect('/users'))
+app.get('/', (c) => c.redirect('/providers'))
 
 // Mount Modular Routes
 app.route('/users', usersModule)

@@ -20,7 +20,7 @@ app.get('/', async (c) => {
   const db = getDb(c.env)
   const providers = await db.execQuery('SELECT * FROM Providers WHERE Username = ?', username)
   return c.html(
-    <Layout>
+    <Layout user={username}>
       <h2>My Providers</h2>
       <form method="post" action="/providers">
         <input name="Label" placeholder="Label" required />
@@ -58,9 +58,10 @@ app.get('/edit', async (c) => {
   if (providers.length === 0) return c.redirect('/providers')
   const provider = providers[0]
   const keys = await db.execQuery('SELECT * FROM Keys WHERE ProviderId = ?', providerId)
+  const usages = await db.execQuery('SELECT * FROM Usages WHERE APIKEY IN (SELECT APIKEY FROM Keys WHERE ProviderId = ?)', providerId)
 
   return c.html(
-    <Layout>
+    <Layout user={username}>
       <h2>Edit Provider: {provider.Label}</h2>
       <form method="post" action={`/providers/update?id=${providerId}`}>
         <input name="Label" defaultValue={provider.Label} required />
@@ -76,6 +77,13 @@ app.get('/edit', async (c) => {
       <ul>
         {keys.map((k: any) => (
           <li>{k.APIKEY} <a href={`/providers/delete-key?key=${k.APIKEY}&id=${providerId}`} style={{color: 'red'}}>Delete</a></li>
+        ))}
+      </ul>
+
+      <h3>Usage Logs</h3>
+      <ul>
+        {usages.map((u: any) => (
+          <li>Key: {u.APIKEY} | In: {u.InputToken} | Out: {u.OutputToken} | Date: {u.TriggerAt}</li>
         ))}
       </ul>
       <br />
