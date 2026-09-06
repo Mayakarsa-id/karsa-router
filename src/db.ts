@@ -40,6 +40,13 @@ export class DBServer extends DurableObject {
         APIKEY TEXT,
         FOREIGN KEY (APIKEY) REFERENCES Keys(APIKEY) ON DELETE CASCADE
       );
+
+      CREATE TABLE IF NOT EXISTS Sessions (
+        Token TEXT PRIMARY KEY,
+        Username TEXT,
+        ExpiresAt TEXT,
+        FOREIGN KEY (Username) REFERENCES Users(Username) ON DELETE CASCADE
+      );
     `);
   }
 
