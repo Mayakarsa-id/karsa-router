@@ -9,16 +9,16 @@ app.get('/', (c) => {
     <html>
       <head>
         <title>Register — Karsa Router</title>
-        <link rel="stylesheet" href="/style.css" />
+        <link rel="stylesheet" href="/src/style.css" />
       </head>
       <body>
-        <h2>JOIN<br/>KARSA</h2>
-        <p style="font-size:14px; letter-spacing:0.06em; text-transform:uppercase; border-left:8px solid var(--accent); padding-left:12px">Create identity — TOTP secured</p>
+        <h2>REGISTER</h2>
+        <p>TOTP secured — create identity</p>
         <form method="post" action="/register">
-          <input name="Username" placeholder="USERNAME" required style="text-transform:uppercase" />
-          <button type="submit">Register →</button>
+          <input name="Username" placeholder="USERNAME" required />
+          <button type="submit">Register</button>
         </form>
-        <p><a href="/users/verify" style="font-weight:800; text-transform:uppercase; letter-spacing:0.08em; text-decoration:none; border-bottom:3px solid var(--black)">Already have account? Login</a></p>
+        <p><a href="/users/verify">Already have account? Login</a></p>
       </body>
     </html>
   )

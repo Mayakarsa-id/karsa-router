@@ -1,3 +1,118 @@
-h1 {
-  font-family: Arial, Helvetica, sans-serif;
+/* brutalism — minimal distraction */
+* { box-sizing: border-box; }
+html { background: #fff; }
+body {
+  margin: 0;
+  font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  background: #fff;
+  color: #000;
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 0 20px 40px;
+  line-height: 1.5;
 }
+a { color: #000; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+a:hover { background: #000; color: #fff; text-decoration: none; }
+nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 3px solid #000;
+  padding: 12px 16px;
+  margin: 24px 0 28px;
+  background: #fff;
+}
+nav div { display: flex; gap: 12px; align-items: center; }
+nav a {
+  font-weight: 700;
+  text-decoration: none;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  border: 2px solid transparent;
+  padding: 4px 8px;
+}
+nav a:hover { border-color: #000; background: #000; color: #fff; }
+h2 {
+  font-size: 40px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  line-height: 0.9;
+  margin: 20px 0 14px;
+  padding-bottom: 10px;
+  border-bottom: 4px solid #000;
+}
+h3 {
+  font-size: 16px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 28px 0 12px;
+  padding-left: 10px;
+  border-left: 6px solid #000;
+}
+p, li { font-size: 14px; }
+code {
+  font-family: ui-monospace, monospace;
+  background: #000;
+  color: #fff;
+  padding: 2px 6px;
+  font-size: 12px;
+}
+form {
+  border: 3px solid #000;
+  padding: 16px;
+  margin-bottom: 20px;
+  background: #fff;
+}
+label { font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: 0.06em; }
+input, select {
+  font-family: inherit;
+  font-size: 13px;
+  border: 2px solid #000;
+  padding: 8px 10px;
+  background: #fff;
+  outline: none;
+  width: 100%;
+}
+input:focus, select:focus { outline: 3px solid #000; outline-offset: 2px; }
+input[readonly] { background: #f2f2f2; }
+button {
+  font-family: inherit;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  border: 3px solid #000;
+  background: #000;
+  color: #fff;
+  padding: 9px 16px;
+  cursor: pointer;
+}
+button:hover { background: #fff; color: #000; }
+button:active { background: #e5e5e5; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 3px solid #000;
+  background: #fff;
+  margin-bottom: 20px;
+}
+thead tr { background: #000; color: #fff; }
+th {
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  padding: 10px 8px;
+  text-align: left;
+  font-weight: 700;
+}
+td {
+  font-size: 13px;
+  padding: 8px;
+  border: 1px solid #000;
+}
+tr:nth-child(even) td { background: #f2f2f2; }
+ul, ol { padding-left: 22px; }
+hr { border: none; border-top: 3px solid #000; margin: 20px 0; }

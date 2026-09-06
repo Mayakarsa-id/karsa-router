@@ -2,7 +2,7 @@ export const Layout = (props: { children: any; user?: string }) => (
   <html>
     <head>
       <title>Karsa Router</title>
-      <link rel="stylesheet" href="/style.css" />
+      <link rel="stylesheet" href="/src/style.css" />
     </head>
     <body>
       <nav>
