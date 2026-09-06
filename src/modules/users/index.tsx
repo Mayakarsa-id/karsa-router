@@ -83,8 +83,9 @@ app.get('/', async (c) => {
       <h2>Dashboard</h2>
       <h3>Your API Key</h3>
       {user.APIKEY ? (
-        <div>
-          <code>{user.APIKEY}</code>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <input id="apiKey" value={user.APIKEY} readOnly style={{ width: '300px' }} />
+          <button onclick="navigator.clipboard.writeText(document.getElementById('apiKey').value).then(() => alert('Copied!'))">Copy</button>
           <form method="post" action="/users/revoke-key">
             <button type="submit">Revoke Key</button>
           </form>
