@@ -30,7 +30,7 @@ app.get('/', async (c) => {
       <ul>
         {providers.map((p: any) => (
           <li>
-            <a href={`/providers/edit?id=${p.ProviderId}`}>{p.Label} ({p.ProviderId})</a>
+            <a href={`/providers/${p.ProviderId}/edit`}>{p.Label} ({p.ProviderId})</a>
           </li>
         ))}
       </ul>
@@ -48,11 +48,11 @@ app.post('/', async (c) => {
   return c.redirect('/providers')
 })
 
-app.get('/edit', async (c) => {
+app.get('/:id/edit', async (c) => {
   const username = await getCurrentUser(c)
   if (!username) return c.redirect('/users/verify')
 
-  const providerId = c.req.query('id')
+  const providerId = c.req.param('id')
   const db = getDb(c.env)
   const providers = await db.execQuery('SELECT * FROM Providers WHERE ProviderId = ? AND Username = ?', providerId, username)
   if (providers.length === 0) return c.redirect('/providers')
@@ -63,21 +63,20 @@ app.get('/edit', async (c) => {
   return c.html(
     <Layout user={username}>
       <h2>Edit Provider: {provider.Label}</h2>
-      <form method="post" action={`/providers/update?id=${providerId}`}>
+      <form method="post" action={`/providers/${providerId}/update`}>
         <input name="Label" defaultValue={provider.Label} required />
         <input name="Prefix" defaultValue={provider.Prefix} required />
-        <input value={provider.ProviderId} disabled />
         <button type="submit">Update</button>
       </form>
 
       <h3>API Keys</h3>
-      <form method="post" action={`/providers/add-key?id=${providerId}`}>
+      <form method="post" action={`/providers/${providerId}/add-key`}>
         <input name="APIKEY" placeholder="New API Key" required />
         <button type="submit">Add Key</button>
       </form>
       <ul>
         {keys.map((k: any) => (
-          <li>{k.APIKEY} <a href={`/providers/delete-key?key=${k.APIKEY}&id=${providerId}`} style={{color: 'red'}}>Delete</a></li>
+          <li>{k.APIKEY} <a href={`/providers/${providerId}/delete-key/${k.APIKEY}`} style={{color: 'red'}}>Delete</a></li>
         ))}
       </ul>
 
@@ -93,30 +92,31 @@ app.get('/edit', async (c) => {
   )
 })
 
-app.post('/update', async (c) => {
+app.post('/:id/update', async (c) => {
   const username = await getCurrentUser(c)
   if (!username) return c.redirect('/users/verify')
 
-  const providerId = c.req.query('id')
+  const providerId = c.req.param('id')
   const { Label, Prefix } = await c.req.parseBody()
   await getDb(c.env).execRun('UPDATE Providers SET Label = ?, Prefix = ? WHERE ProviderId = ? AND Username = ?', Label, Prefix, providerId, username)
-  return c.redirect(`/providers/edit?id=${providerId}`)
+  return c.redirect(`/providers/${providerId}/edit`)
 })
 
-app.post('/add-key', async (c) => {
+app.post('/:id/add-key', async (c) => {
   const username = await getCurrentUser(c)
   if (!username) return c.redirect('/users/verify')
 
-  const providerId = c.req.query('id')
+  const providerId = c.req.param('id')
   const { APIKEY } = await c.req.parseBody()
   await getDb(c.env).execRun('INSERT INTO Keys (APIKEY, ProviderId) VALUES (?, ?)', APIKEY, providerId)
-  return c.redirect(`/providers/edit?id=${providerId}`)
+  return c.redirect(`/providers/${providerId}/edit`)
 })
 
-app.get('/delete-key', async (c) => {
-  const providerId = c.req.query('id')
-  await getDb(c.env).execRun('DELETE FROM Keys WHERE APIKEY = ?', c.req.query('key'))
-  return c.redirect(`/providers/edit?id=${providerId}`)
+app.get('/:id/delete-key/:key', async (c) => {
+  const providerId = c.req.param('id')
+  const key = c.req.param('key')
+  await getDb(c.env).execRun('DELETE FROM Keys WHERE APIKEY = ?', key)
+  return c.redirect(`/providers/${providerId}/edit`)
 })
 
 export default app
