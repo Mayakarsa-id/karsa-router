@@ -46,4 +46,32 @@ app.route('/providers', providersModule)
 app.route('/keys', keysModule)
 app.route('/usages', usagesModule)
 
+// AI Proxy Route
+app.all('/ai/openai-compatible/v1/*', async (c) => {
+  const apiKey = c.req.header('Authorization')?.replace('Bearer ', '')
+  if (!apiKey) return c.json({ error: 'Unauthorized' }, 401)
+
+  const db = getDb(c.env)
+  const keys = await db.execQuery('SELECT ProviderId FROM Keys WHERE APIKEY = ? AND IsActive = 1', apiKey)
+  if (keys.length === 0) return c.json({ error: 'Invalid API Key' }, 401)
+
+  const providerId = keys[0].ProviderId
+  const providers = await db.execQuery('SELECT * FROM Providers WHERE ProviderId = ?', providerId)
+  if (providers.length === 0) return c.json({ error: 'Provider not found' }, 404)
+
+  const provider = providers[0]
+  const targetUrl = c.req.url.replace('/ai/openai-compatible/v1', provider.BaseUrl)
+
+  const response = await fetch(targetUrl, {
+    method: c.req.method,
+    headers: c.req.raw.headers,
+    body: c.req.raw.body,
+  })
+
+  // Record usage
+  await db.execRun('INSERT INTO Usages (APIKEY, InputToken, OutputToken) VALUES (?, ?, ?)', apiKey, 0, 0) // Placeholder for actual token counting
+
+  return response
+})
+
 export default app
