@@ -16,7 +16,7 @@ const app = new Hono<{ Bindings: Bindings }>()
 
 // Auth Middleware
 app.use(async (c, next) => {
-  const publicPaths = ['/users/verify', '/users/qr', '/users']
+  const publicPaths = ['/users/verify', '/users/qr', '/users', '/register']
   if (publicPaths.includes(c.req.path) || c.req.path.startsWith('/ai/openai-compatible/v1/')) {
     await next()
     return
