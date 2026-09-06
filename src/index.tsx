@@ -1,5 +1,5 @@
 import { Hono } from 'hono'
-import { getCookie, setCookie } from 'hono/cookie'
+import { getCookie } from 'hono/cookie'
 import { DBServer } from './db'
 import { getDb, Bindings } from './shared/db-client'
 
@@ -81,12 +81,7 @@ app.post('/register', async (c) => {
   const apiKey = `sk-kr-${crypto.randomUUID().replace(/-/g, '')}`
   await db.execRun('UPDATE Users SET APIKEY = ? WHERE Username = ?', apiKey, username)
 
-  const token = crypto.randomUUID()
-  const expiresAt = new Date(Date.now() + 86400000).toISOString()
-  await db.execRun('INSERT INTO Sessions (Token, Username, ExpiresAt) VALUES (?, ?, ?)', token, username, expiresAt)
-  setCookie(c, 'session', token, { expires: new Date(expiresAt), httpOnly: true, path: '/' })
-
-  return c.redirect('/users')
+  return c.redirect(`/users/qr?username=${encodeURIComponent(username)}`)
 })
 
 // Mount Modular Routes
@@ -121,11 +116,12 @@ app.all('/ai/openai-compatible/v1/*', async (c) => {
         }))
       })
     )
+    console.log(results);
 
     const allModels = results
       .filter((r) => r.status === 'fulfilled')
       .flatMap((r) => (r as PromiseFulfilledResult<any>).value)
-    
+
     return c.json({ data: allModels })
   }
 
