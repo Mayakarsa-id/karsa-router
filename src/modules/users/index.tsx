@@ -177,13 +177,17 @@ app.get('/verify', (c) => {
       {status === 'success' && <p style={{ color: 'green', fontWeight: 'bold' }}>✅ Verification Successful!</p>}
       {status === 'failed' && <p style={{ color: 'red', fontWeight: 'bold' }}>❌ Invalid Code. Try again.</p>}
 
-      <form method="post" action="/users/verify">
-        <input name="Username" placeholder="Username" required value={username || ''} />
-        <input name="Code" placeholder="Enter 6-digit code" maxLength={6} required autocomplete="off" />
-        <button type="submit">Verify</button>
+      <form method="post" action="/users/verify" style="display:grid; gap:14px;">
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <label>Username</label>
+          <input name="Username" placeholder="Username" required value={username || ''} />
+        </div>
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <label>6-digit Code</label>
+          <input name="Code" placeholder="Enter 6-digit code" maxLength={6} required autocomplete="off" />
+        </div>
+        <div><button type="submit">Verify</button></div>
       </form>
-      <br />
-      <a href="/users">← Back to Users</a>
     </Layout>
   )
 })

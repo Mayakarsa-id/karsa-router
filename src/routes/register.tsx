@@ -14,9 +14,12 @@ app.get('/', (c) => {
       <body>
         <h2>REGISTER</h2>
         <p>TOTP secured — create identity</p>
-        <form method="post" action="/register">
-          <input name="Username" placeholder="USERNAME" required />
-          <button type="submit">Register</button>
+        <form method="post" action="/register" style="display:grid; gap:14px;">
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <label>Username</label>
+            <input name="Username" placeholder="USERNAME" required />
+          </div>
+          <div><button type="submit">Register</button></div>
         </form>
         <p><a href="/users/verify">Already have account? Login</a></p>
       </body>
