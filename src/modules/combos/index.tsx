@@ -25,7 +25,7 @@ app.get('/', async (c) => {
 
       <h3>Combos ({(combos as any[]).length})</h3>
       {(combos as any[]).length === 0 ? (
-        <p style="border:3px solid #000; padding:14px; background:#f2f2f2;">No combos yet — create one above.</p>
+        <p class="card-muted">No combos yet — create one above.</p>
       ) : (
         <table>
           <thead><tr><th>Name</th><th>Model ID</th><th>Created</th><th></th></tr></thead>
@@ -41,7 +41,7 @@ app.get('/', async (c) => {
           </tbody>
         </table>
       )}
-      <p style="font-size:12px; border:2px solid #000; padding:8px; background:#fff;">Providers: {(providers as any[]).map((p:any)=>`${p.Prefix} (${p.Label})`).join(', ') || 'none — create providers first'}</p>
+      <p class="card" style="font-size:12px; padding:8px; border-width:2px;">Providers: {(providers as any[]).map((p:any)=>`${p.Prefix} (${p.Label})`).join(', ') || 'none — create providers first'}</p>
     </Layout>
   )
 })
@@ -82,7 +82,7 @@ app.get('/:id', async (c) => {
 
       <h3>Models — fallback order ({(models as any[]).length})</h3>
       {(models as any[]).length === 0 ? (
-        <p style="border:3px solid #000; padding:14px; background:#f2f2f2;">No models yet — add below.</p>
+        <p class="card-muted">No models yet — add below.</p>
       ) : (
         <table>
           <thead><tr><th>#</th><th>Provider</th><th>Model ID</th><th></th></tr></thead>

@@ -45,7 +45,7 @@ app.get('/', async (c) => {
 
       <h3>Providers ({(providers as any[]).length})</h3>
       {(providers as any[]).length === 0 ? (
-        <p style="border:3px solid #000; padding:14px; background:#f2f2f2;">No providers yet — create one above.</p>
+        <p class="card-muted">No providers yet — create one above.</p>
       ) : (
         <table>
           <thead>
@@ -144,7 +144,7 @@ app.get('/:id/edit', async (c) => {
         <div><button type="submit">Add Key</button></div>
       </form>
       {(keys as any[]).length === 0 ? (
-        <p style="border:3px solid #000; padding:14px; background:#f2f2f2;">No keys yet.</p>
+        <p class="card-muted">No keys yet.</p>
       ) : (
         <table>
           <thead><tr><th>API Key</th><th></th></tr></thead>
