@@ -139,7 +139,7 @@ app.all('/*', async (c) => {
           body: forwardBody && c.req.method !== 'GET' && c.req.method !== 'HEAD' ? forwardBody : undefined,
         })
         if (resp.ok) {
-          return await handleSuccess(resp, db, apiKey, `combo/${combo.Name}`, requestedModel)
+          return await handleSuccess(resp, db, apiKey, entry.Prefix, strippedModel)
         }
         lastResponse = resp
         console.log(`combo ${combo.Name} provider ${provider.Prefix}/${strippedModel} key ${providerKey.slice(0,8)}... failed ${resp.status}, trying next`)
@@ -154,6 +154,7 @@ app.all('/*', async (c) => {
 
   // single provider/model path
   let targetProvider: any = (providers as any[])[0]
+  let literalModel = requestedModel || ''
   if (requestedModel && requestedModel.includes('/')) {
     const prefix = requestedModel.split('/')[0]
     const matched = (providers as any[]).find((p: any) => p.Prefix === prefix)
@@ -161,12 +162,12 @@ app.all('/*', async (c) => {
   }
   let forwardBody: string | undefined = bodyTextForForward
   if (requestedModel && requestedModel.includes('/') && targetProvider) {
-    // if matched by prefix, strip it
     const prefix = requestedModel.split('/')[0]
     if (targetProvider.Prefix === prefix) {
+      literalModel = requestedModel.split('/').slice(1).join('/')
       try {
         const j = JSON.parse(bodyTextForForward || '{}')
-        j.model = requestedModel.split('/').slice(1).join('/')
+        j.model = literalModel
         forwardBody = JSON.stringify(j)
       } catch {}
     }
@@ -189,7 +190,7 @@ app.all('/*', async (c) => {
       body: forwardBody && c.req.method !== 'GET' && c.req.method !== 'HEAD' ? forwardBody : undefined,
     })
     if (resp.ok) {
-      return await handleSuccess(resp, db, apiKey, targetProvider.Prefix || targetProvider.Label, requestedModel || '')
+      return await handleSuccess(resp, db, apiKey, targetProvider.Prefix, literalModel)
     }
     lastResponse = resp
     console.log(`provider ${targetProvider.Prefix} key ${providerKey.slice(0, 8)}... failed ${resp.status}, trying next`)
