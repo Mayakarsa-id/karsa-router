@@ -13,6 +13,7 @@ export class DBServer extends DurableObject {
       CREATE TABLE IF NOT EXISTS Users (
         Username TEXT PRIMARY KEY,
         TotpSecret TEXT,
+        APIKEY TEXT,
         Created_At TEXT DEFAULT CURRENT_TIMESTAMP
       );
 
