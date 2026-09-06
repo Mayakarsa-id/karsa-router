@@ -14,24 +14,57 @@ app.get('/', async (c) => {
   return c.html(
     <Layout user={username}>
       <h2>My Providers</h2>
-      <form method="post" action="/providers">
-        <input name="Label" placeholder="Label" required />
-        <input name="Prefix" placeholder="Prefix" required />
-        <input name="BaseUrl" placeholder="Base URL" required />
-        <select name="Type" required>
-          <option value="openai">OpenAI</option>
-          <option value="anthropic">Anthropic</option>
-        </select>
-        <input name="TimeoutMs" placeholder="Timeout ms (default 30000)" type="number" min="1000" />
-        <button type="submit">Create Provider</button>
+      <form method="post" action="/providers" style="display:grid; grid-template-columns:1fr 1fr; gap:14px; align-items:end;">
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <label>Label</label>
+          <input name="Label" placeholder="e.g. OpenAI Prod" required />
+        </div>
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <label>Prefix</label>
+          <input name="Prefix" placeholder="e.g. openai" required />
+        </div>
+        <div style="display:flex; flex-direction:column; gap:6px; grid-column:span 2;">
+          <label>Base URL</label>
+          <input name="BaseUrl" placeholder="https://api.openai.com/v1" required />
+        </div>
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <label>Type</label>
+          <select name="Type" required>
+            <option value="openai">OpenAI</option>
+            <option value="anthropic">Anthropic</option>
+          </select>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <label>Timeout ms</label>
+          <input name="TimeoutMs" placeholder="30000" type="number" min="1000" />
+        </div>
+        <div style="grid-column:span 2;">
+          <button type="submit">Create Provider</button>
+        </div>
       </form>
-      <ul>
-        {providers.map((p: any) => (
-          <li>
-            <a href={`/providers/${p.ProviderId}/edit`}>{p.Label} ({p.ProviderId})</a>
-          </li>
-        ))}
-      </ul>
+
+      <h3>Providers ({(providers as any[]).length})</h3>
+      {(providers as any[]).length === 0 ? (
+        <p style="border:3px solid #000; padding:14px; background:#f2f2f2;">No providers yet — create one above.</p>
+      ) : (
+        <table>
+          <thead>
+            <tr><th>Label</th><th>Prefix</th><th>Type</th><th>Base URL</th><th>Timeout</th><th></th></tr>
+          </thead>
+          <tbody>
+            {(providers as any[]).map((p: any) => (
+              <tr>
+                <td><strong>{p.Label}</strong><br/><span style="font-size:11px; opacity:0.7;">{p.ProviderId}</span></td>
+                <td><code>{p.Prefix}</code></td>
+                <td>{p.Type}</td>
+                <td style="max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title={p.BaseUrl}>{p.BaseUrl}</td>
+                <td>{p.TimeoutMs || 30000} ms</td>
+                <td><a href={`/providers/${p.ProviderId}/edit`}>Edit →</a></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </Layout>
   )
 })
