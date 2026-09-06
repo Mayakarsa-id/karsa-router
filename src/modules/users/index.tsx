@@ -41,6 +41,23 @@ app.get('/', async (c) => {
         </form>
       )}
 
+      <h3>User Stats</h3>
+      <table border={1} cellpadding={8} style={{ borderCollapse: 'collapse', width: '100%' }}>
+        <thead>
+          <tr>
+            <th>Request</th><th>Input Token</th><th>Cached Token</th><th>Output Token</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>{(user as any).RequestCount ?? 0}</td>
+            <td>{(user as any).InputToken ?? 0}</td>
+            <td>{(user as any).CachedToken ?? 0}</td>
+            <td>{(user as any).OutputToken ?? 0}</td>
+          </tr>
+        </tbody>
+      </table>
+
       <h3>Usage Logs (10 newest)</h3>
       <table border={1} cellpadding={8} style={{ borderCollapse: 'collapse', width: '100%' }}>
         <thead>
