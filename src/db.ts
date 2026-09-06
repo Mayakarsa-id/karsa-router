@@ -21,6 +21,8 @@ export class DBServer extends DurableObject {
         Label TEXT,
         Prefix TEXT,
         Username TEXT,
+        BaseUrl TEXT,
+        Type TEXT,
         FOREIGN KEY (Username) REFERENCES Users(Username) ON DELETE CASCADE
       );
 

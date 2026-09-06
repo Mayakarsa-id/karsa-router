@@ -25,6 +25,11 @@ app.get('/', async (c) => {
       <form method="post" action="/providers">
         <input name="Label" placeholder="Label" required />
         <input name="Prefix" placeholder="Prefix" required />
+        <input name="BaseUrl" placeholder="Base URL" required />
+        <select name="Type" required>
+          <option value="openai">OpenAI</option>
+          <option value="anthropic">Anthropic</option>
+        </select>
         <button type="submit">Create Provider</button>
       </form>
       <ul>
@@ -42,9 +47,12 @@ app.post('/', async (c) => {
   const username = await getCurrentUser(c)
   if (!username) return c.redirect('/users/verify')
 
-  const { Label, Prefix } = await c.req.parseBody()
+  const { Label, Prefix, BaseUrl, Type } = await c.req.parseBody()
   const ProviderId = crypto.randomUUID().slice(0, 8)
-  await getDb(c.env).execRun('INSERT INTO Providers (ProviderId, Label, Prefix, Username) VALUES (?, ?, ?, ?)', ProviderId, Label, Prefix, username)
+  await getDb(c.env).execRun(
+    'INSERT INTO Providers (ProviderId, Label, Prefix, Username, BaseUrl, Type) VALUES (?, ?, ?, ?, ?, ?)',
+    ProviderId, Label, Prefix, username, BaseUrl, Type
+  )
   return c.redirect('/providers')
 })
 
@@ -66,6 +74,11 @@ app.get('/:id/edit', async (c) => {
       <form method="post" action={`/providers/${providerId}/update`}>
         <input name="Label" defaultValue={provider.Label} required />
         <input name="Prefix" defaultValue={provider.Prefix} required />
+        <input name="BaseUrl" defaultValue={provider.BaseUrl} required />
+        <select name="Type" defaultValue={provider.Type} required>
+          <option value="openai">OpenAI</option>
+          <option value="anthropic">Anthropic</option>
+        </select>
         <button type="submit">Update</button>
       </form>
 
@@ -97,8 +110,11 @@ app.post('/:id/update', async (c) => {
   if (!username) return c.redirect('/users/verify')
 
   const providerId = c.req.param('id')
-  const { Label, Prefix } = await c.req.parseBody()
-  await getDb(c.env).execRun('UPDATE Providers SET Label = ?, Prefix = ? WHERE ProviderId = ? AND Username = ?', Label, Prefix, providerId, username)
+  const { Label, Prefix, BaseUrl, Type } = await c.req.parseBody()
+  await getDb(c.env).execRun(
+    'UPDATE Providers SET Label = ?, Prefix = ?, BaseUrl = ?, Type = ? WHERE ProviderId = ? AND Username = ?',
+    Label, Prefix, BaseUrl, Type, providerId, username
+  )
   return c.redirect(`/providers/${providerId}/edit`)
 })
 
