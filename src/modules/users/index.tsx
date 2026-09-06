@@ -1,4 +1,5 @@
 import { Hono } from 'hono'
+import { setCookie, deleteCookie } from 'hono/cookie'
 import { getDb, Bindings } from '../../shared/db-client'
 import { Layout } from '../../shared/layout'
 
@@ -75,6 +76,7 @@ app.get('/', async (c) => {
   return c.html(
     <Layout>
       <h2>Users</h2>
+      <a href="/users/logout">Logout</a>
       <form method="post" action="/users">
         <input name="Username" placeholder="Username" required />
         <button type="submit">Create User</button>
@@ -146,17 +148,16 @@ app.get('/qr', async (c) => {
 // UI for inputting the code
 app.get('/verify', (c) => {
   const username = c.req.query('username')
-  if (!username) return c.redirect('/users')
   const status = c.req.query('status')
 
   return c.html(
     <Layout>
-      <h2>Verify Login: {username}</h2>
+      <h2>Verify Login</h2>
       {status === 'success' && <p style={{ color: 'green', fontWeight: 'bold' }}>✅ Verification Successful!</p>}
       {status === 'failed' && <p style={{ color: 'red', fontWeight: 'bold' }}>❌ Invalid Code. Try again.</p>}
 
       <form method="post" action="/users/verify">
-        <input type="hidden" name="Username" value={username} />
+        <input name="Username" placeholder="Username" required value={username || ''} />
         <input name="Code" placeholder="Enter 6-digit code" maxLength={6} required autocomplete="off" />
         <button type="submit">Verify</button>
       </form>
@@ -173,16 +174,25 @@ app.post('/verify', async (c) => {
   const db = getDb(c.env)
   const users = await db.execQuery('SELECT TotpSecret FROM Users WHERE Username = ?', Username)
 
-  if (users.length === 0) return c.redirect('/users')
+  if (users.length === 0) return c.redirect('/users/verify?status=failed')
 
   const secret = users[0].TotpSecret
   const isValid = await verifyTOTP(secret, Code as string)
 
   if (isValid) {
-    return c.redirect(`/users/verify?username=${Username}&status=success`)
+    const token = crypto.randomUUID()
+    const expiresAt = new Date(Date.now() + 86400000).toISOString() // 1 day
+    await db.execRun('INSERT INTO Sessions (Token, Username, ExpiresAt) VALUES (?, ?, ?)', token, Username, expiresAt)
+    setCookie(c, 'session', token, { expires: new Date(expiresAt), httpOnly: true, path: '/' })
+    return c.redirect('/users')
   } else {
     return c.redirect(`/users/verify?username=${Username}&status=failed`)
   }
+})
+
+app.get('/logout', (c) => {
+  deleteCookie(c, 'session')
+  return c.redirect('/users/verify')
 })
 
 app.get('/delete', async (c) => {
