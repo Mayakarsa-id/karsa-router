@@ -45,20 +45,21 @@ app.get('/', async (c) => {
       <table border={1} cellpadding={8} style={{ borderCollapse: 'collapse', width: '100%' }}>
         <thead>
           <tr>
-            <th>#</th><th>Provider</th><th>Model</th><th>Input Token</th><th>Output Token</th><th>Timestamp</th>
+            <th>#</th><th>Provider</th><th>Model</th><th>Input</th><th>Output</th><th>Cached</th><th>Timestamp</th>
           </tr>
         </thead>
         <tbody>
           {usages.length === 0 ? (
-            <tr><td colspan={6} style={{ textAlign: 'center' }}>No usage yet</td></tr>
+            <tr><td colspan={7} style={{ textAlign: 'center' }}>No usage yet</td></tr>
           ) : (
             usages.map((u: any, i: number) => (
               <tr>
                 <td>{i + 1}</td>
                 <td>{u.Provider || '-'}</td>
                 <td>{u.Model || '-'}</td>
-                <td>{u.InputToken}</td>
-                <td>{u.OutputToken}</td>
+                <td>{u.InputToken ?? 0}</td>
+                <td>{u.OutputToken ?? 0}</td>
+                <td>{u.CachedToken ?? 0}</td>
                 <td>{u.TriggerAt}</td>
               </tr>
             ))
