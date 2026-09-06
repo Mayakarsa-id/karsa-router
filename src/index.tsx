@@ -1,5 +1,5 @@
 import { Hono } from 'hono'
-import { getCookie } from 'hono/cookie'
+import { getCookie, setCookie } from 'hono/cookie'
 import { DBServer } from './db'
 import { getDb, Bindings } from './shared/db-client'
 
