@@ -16,6 +16,7 @@ app.get('/', async (c) => {
   const db = getDb(c.env)
   const users = await db.execQuery('SELECT * FROM Users WHERE Username = ?', username)
   const user = users[0] as any
+  const censoredKey = user.APIKEY ? `${(user.APIKEY as string).slice(0, 8)}${'•'.repeat(8)}${(user.APIKEY as string).slice(-4)}` : ''
   let usages: any[] = []
   if (user.APIKEY) {
     try {
@@ -29,15 +30,15 @@ app.get('/', async (c) => {
       <h3>Your API Key</h3>
       {user.APIKEY ? (
         <div class="card">
-          <div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; font-weight:700; margin-bottom:8px;">API Key — keep secret</div>
+          <div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; font-weight:700; margin-bottom:8px;">API Key — keep secret (censored)</div>
           <div style="display:flex; gap:10px; align-items:stretch; flex-wrap:wrap;">
-            <input id="apiKey" value={user.APIKEY} readOnly style="flex:1 1 340px; font-family:ui-monospace,monospace; font-size:13px; letter-spacing:0.02em;" />
-            <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('apiKey').value).then(()=>{const b=event.target;b.textContent='Copied!';setTimeout(()=>b.textContent='Copy',1500)})">Copy</button>
+            <input id="apiKey" value={censoredKey} data-full={user.APIKEY} readOnly style="flex:1 1 340px; font-family:ui-monospace,monospace; font-size:13px; letter-spacing:0.02em;" />
+            <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('apiKey').dataset.full).then(()=>{const b=event.target;b.textContent='Copied!';setTimeout(()=>b.textContent='Copy',1500)})">Copy</button>
             <form method="post" action="/users/revoke-key" style="margin:0; border:none; padding:0; box-shadow:none; background:none;">
               <button type="submit">Revoke</button>
             </form>
           </div>
-          <div style="font-size:12px; margin-top:8px;">Use as <code>Authorization: Bearer sk-kr-...</code></div>
+          <div style="font-size:12px; margin-top:8px;">Use as <code>Authorization: Bearer $KARSA_API_KEY</code></div>
         </div>
       ) : (
         <div class="card-muted">
@@ -51,22 +52,22 @@ app.get('/', async (c) => {
       <h3>How to Use</h3>
       <div class="card" style="display:grid; gap:12px;">
         <div><strong>Base URL</strong> <code>{c.req.url.replace(/\/users.*$/, '')}/ai/openai-compatible/v1</code></div>
-        <div><strong>Auth</strong> <code>Authorization: Bearer {user.APIKEY || 'sk-kr-...'}</code></div>
+        <div><strong>Auth</strong> <code>Authorization: Bearer $KARSA_API_KEY</code> <span style="font-size:12px; opacity:0.7;">— export KARSA_API_KEY="sk-kr-..."</span></div>
         <div style="display:grid; gap:8px;">
           <div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; font-weight:700;">List models</div>
-          <pre style="margin:0; padding:10px; border:2px solid #000; background:#fff; overflow:auto; font-size:12px;"><code>curl -H "Authorization: Bearer {user.APIKEY || 'sk-kr-...'}" \
+          <pre style="margin:0; padding:10px; border:2px solid #000; background:#fff; overflow:auto; font-size:12px;"><code>curl -H "Authorization: Bearer $KARSA_API_KEY" \
   {c.req.url.replace(/\/users.*$/, '')}/ai/openai-compatible/v1/models</code></pre>
         </div>
         <div style="display:grid; gap:8px;">
           <div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; font-weight:700;">Chat completions — prefix/model</div>
           <pre style="margin:0; padding:10px; border:2px solid #000; background:#fff; overflow:auto; font-size:12px;"><code>{`curl -X POST ${c.req.url.replace(/\/users.*$/, '')}/ai/openai-compatible/v1/chat/completions \\
-  -H "Authorization: Bearer ${user.APIKEY || 'sk-kr-...'}" -H "Content-Type: application/json" \\
+  -H "Authorization: Bearer $KARSA_API_KEY" -H "Content-Type: application/json" \\
   -d '{"model":"openai/gpt-4o-mini","messages":[{"role":"user","content":"hi"}]}'`}</code></pre>
         </div>
         <div style="display:grid; gap:8px;">
           <div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; font-weight:700;">Combo fallback</div>
           <pre style="margin:0; padding:10px; border:2px solid #000; background:#fff; overflow:auto; font-size:12px;"><code>{`curl -X POST ${c.req.url.replace(/\/users.*$/, '')}/ai/openai-compatible/v1/chat/completions \\
-  -H "Authorization: Bearer ${user.APIKEY || 'sk-kr-...'}" -H "Content-Type: application/json" \\
+  -H "Authorization: Bearer $KARSA_API_KEY" -H "Content-Type: application/json" \\
   -d '{"model":"combo/fast","messages":[{"role":"user","content":"hi"}]}'`}</code></pre>
         </div>
         <p style="margin:0; font-size:12px;">Model format: <code>Prefix/model-id</code> or <code>combo/NAME</code>. Timeout & key fallback automatic.</p>
