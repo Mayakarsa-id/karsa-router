@@ -48,6 +48,30 @@ app.get('/', async (c) => {
         </div>
       )}
 
+      <h3>How to Use</h3>
+      <div class="card" style="display:grid; gap:12px;">
+        <div><strong>Base URL</strong> <code>{c.req.url.replace(/\/users.*$/, '')}/ai/openai-compatible/v1</code></div>
+        <div><strong>Auth</strong> <code>Authorization: Bearer {user.APIKEY || 'sk-kr-...'}</code></div>
+        <div style="display:grid; gap:8px;">
+          <div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; font-weight:700;">List models</div>
+          <pre style="margin:0; padding:10px; border:2px solid #000; background:#fff; overflow:auto; font-size:12px;"><code>curl -H "Authorization: Bearer {user.APIKEY || 'sk-kr-...'}" \
+  {c.req.url.replace(/\/users.*$/, '')}/ai/openai-compatible/v1/models</code></pre>
+        </div>
+        <div style="display:grid; gap:8px;">
+          <div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; font-weight:700;">Chat completions — prefix/model</div>
+          <pre style="margin:0; padding:10px; border:2px solid #000; background:#fff; overflow:auto; font-size:12px;"><code>{`curl -X POST ${c.req.url.replace(/\/users.*$/, '')}/ai/openai-compatible/v1/chat/completions \\
+  -H "Authorization: Bearer ${user.APIKEY || 'sk-kr-...'}" -H "Content-Type: application/json" \\
+  -d '{"model":"openai/gpt-4o-mini","messages":[{"role":"user","content":"hi"}]}'`}</code></pre>
+        </div>
+        <div style="display:grid; gap:8px;">
+          <div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; font-weight:700;">Combo fallback</div>
+          <pre style="margin:0; padding:10px; border:2px solid #000; background:#fff; overflow:auto; font-size:12px;"><code>{`curl -X POST ${c.req.url.replace(/\/users.*$/, '')}/ai/openai-compatible/v1/chat/completions \\
+  -H "Authorization: Bearer ${user.APIKEY || 'sk-kr-...'}" -H "Content-Type: application/json" \\
+  -d '{"model":"combo/fast","messages":[{"role":"user","content":"hi"}]}'`}</code></pre>
+        </div>
+        <p style="margin:0; font-size:12px;">Model format: <code>Prefix/model-id</code> or <code>combo/NAME</code>. Timeout & key fallback automatic.</p>
+      </div>
+
       <h3>User Stats</h3>
       <table border={1} cellpadding={8} style={{ borderCollapse: 'collapse', width: '100%' }}>
         <thead>
