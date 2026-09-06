@@ -66,6 +66,7 @@ app.get('/edit', async (c) => {
       <form method="post" action={`/providers/update?id=${providerId}`}>
         <input name="Label" defaultValue={provider.Label} required />
         <input name="Prefix" defaultValue={provider.Prefix} required />
+        <input value={provider.ProviderId} disabled />
         <button type="submit">Update</button>
       </form>
 
