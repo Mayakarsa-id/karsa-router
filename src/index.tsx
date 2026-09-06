@@ -5,8 +5,6 @@ import { authMiddleware } from './middleware/auth'
 import usersModule from './modules/users'
 import providersModule from './modules/providers'
 import combosModule from './modules/combos'
-import keysModule from './modules/keys'
-import usagesModule from './modules/usages'
 import registerRoutes from './routes/register'
 import aiRoutes from './routes/ai/index'
 
@@ -22,8 +20,6 @@ app.route('/register', registerRoutes)
 app.route('/users', usersModule)
 app.route('/providers', providersModule)
 app.route('/combos', combosModule)
-app.route('/keys', keysModule)
-app.route('/usages', usagesModule)
 app.route('/ai/openai-compatible/v1', aiRoutes)
 
 export default app
