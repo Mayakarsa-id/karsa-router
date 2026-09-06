@@ -138,11 +138,18 @@ app.all('/ai/openai-compatible/v1/*', async (c) => {
   if (c.req.path.endsWith('/models')) {
     const results = await Promise.allSettled(
       providers.map(async (p) => {
+        const keyRows = await db.execQuery('SELECT APIKEY FROM Keys WHERE ProviderId = ? AND IsActive = 1 LIMIT 1', p.ProviderId)
+        const providerKey = keyRows.length > 0 ? keyRows[0].APIKEY : null
+        const headers: Record<string, string> = {}
+        if (providerKey) headers['Authorization'] = `Bearer ${providerKey}`
+        // For Anthropic we may need x-api-key header instead, but keep Authorization for OpenAI-compatible
+        if (p.Type === 'anthropic' && providerKey) headers['x-api-key'] = providerKey
         const url = `${p.BaseUrl.replace(/\/$/, '')}/models`
-        const response = await fetch(url, { headers: c.req.raw.headers })
-        if (!response.ok) throw new Error(`Failed to fetch models from ${p.Label}`)
-        const data = await response.json()
-        return (data as any).data.map((m: any) => ({
+        const response = await fetch(url, { headers })
+        if (!response.ok) throw new Error(`Failed to fetch models from ${p.Label}: ${response.status}`)
+        const data = (await response.json()) as any
+        const list = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : []
+        return list.map((m: any) => ({
           ...m,
           id: `${p.Prefix}/${m.id}`,
         }))
@@ -154,16 +161,39 @@ app.all('/ai/openai-compatible/v1/*', async (c) => {
       .filter((r) => r.status === 'fulfilled')
       .flatMap((r) => (r as PromiseFulfilledResult<any>).value)
 
-    return c.json({ data: allModels })
+    return c.json({ data: allModels, object: 'list' })
   }
 
-  // Existing Proxy logic
-  const provider = providers[0] // Default to first for now
+  // Existing Proxy logic - route by prefix: extract model prefix if present
+  // For now default to first provider, but try to infer from body/model param
+  let provider = providers[0]
+  try {
+    const cloned = c.req.raw.clone()
+    const bodyText = await cloned.text()
+    if (bodyText) {
+      const bodyJson = JSON.parse(bodyText) as any
+      const modelId: string | undefined = bodyJson?.model
+      if (modelId && modelId.includes('/')) {
+        const prefix = modelId.split('/')[0]
+        const matched = providers.find((p: any) => p.Prefix === prefix)
+        if (matched) provider = matched
+      }
+    }
+  } catch {}
+
+  const keyRows = await db.execQuery('SELECT APIKEY FROM Keys WHERE ProviderId = ? AND IsActive = 1 LIMIT 1', provider.ProviderId)
+  const providerKey = keyRows.length > 0 ? keyRows[0].APIKEY : ''
   const targetUrl = c.req.url.replace(/^.*?\/ai\/openai-compatible\/v1\//, `${provider.BaseUrl.replace(/\/$/, '')}/`)
+
+  const forwardHeaders = new Headers(c.req.raw.headers)
+  if (providerKey) {
+    forwardHeaders.set('Authorization', `Bearer ${providerKey}`)
+    if (provider.Type === 'anthropic') forwardHeaders.set('x-api-key', providerKey)
+  }
 
   const response = await fetch(targetUrl, {
     method: c.req.method,
-    headers: c.req.raw.headers,
+    headers: forwardHeaders,
     body: c.req.raw.body,
   })
 
