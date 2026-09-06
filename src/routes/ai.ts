@@ -80,8 +80,56 @@ app.all('/*', async (c) => {
       body: forwardBody && c.req.method !== 'GET' && c.req.method !== 'HEAD' ? forwardBody : undefined,
     })
     if (resp.ok) {
-      await db.execRun('INSERT INTO Usages (APIKEY, InputToken, OutputToken) VALUES (?, ?, ?)', apiKey, 0, 0)
-      return new Response(resp.body, { status: resp.status, headers: resp.headers })
+      const contentType = resp.headers.get('content-type') || ''
+      // streaming: tee and capture tokens via regex, non-streaming: buffer text
+      if (contentType.includes('text/event-stream')) {
+        const { readable, writable } = new TransformStream()
+        const writer = writable.getWriter()
+        const reader = resp.body?.getReader()
+        let buffer = ''
+        ;(async () => {
+          if (!reader) { await writer.close(); return }
+          const decoder = new TextDecoder()
+          try {
+            while (true) {
+              const { done, value } = await reader.read()
+              if (done) break
+              buffer += decoder.decode(value, { stream: true })
+              await writer.write(value)
+            }
+          } finally {
+            try {
+              let inputTokens = 0, outputTokens = 0
+              const re = /"(prompt|completion|reasoning)_tokens"\s*:\s*(\d+)/g
+              let m: RegExpExecArray | null
+              // Use last occurrence per type: prompt overwrites, others sum
+              while ((m = re.exec(buffer)) !== null) {
+                if (m[1] === 'prompt') inputTokens = parseInt(m[2], 10)
+                else outputTokens += parseInt(m[2], 10)
+              }
+              await db.execRun('INSERT INTO Usages (APIKEY, InputToken, OutputToken) VALUES (?, ?, ?)', apiKey, inputTokens, outputTokens)
+            } catch {}
+            await writer.close()
+          }
+        })()
+        const headers = new Headers(resp.headers)
+        return new Response(readable, { status: resp.status, headers })
+      } else {
+        const rawText = await resp.text()
+        let inputTokens = 0, outputTokens = 0
+        const re = /"(prompt|completion|reasoning)_tokens"\s*:\s*(\d+)/g
+        let m: RegExpExecArray | null
+        while ((m = re.exec(rawText)) !== null) {
+          if (m[1] === 'prompt') inputTokens = parseInt(m[2], 10)
+          else outputTokens += parseInt(m[2], 10)
+        }
+        await db.execRun('INSERT INTO Usages (APIKEY, InputToken, OutputToken) VALUES (?, ?, ?)', apiKey, inputTokens, outputTokens)
+        const headers = new Headers(resp.headers)
+        // ensure correct length after buffering
+        headers.delete('content-length')
+        headers.delete('content-encoding')
+        return new Response(rawText, { status: resp.status, headers })
+      }
     }
     lastResponse = resp
     console.log(`provider ${targetProvider.Prefix} key ${providerKey.slice(0, 8)}... failed ${resp.status}, trying next`)
