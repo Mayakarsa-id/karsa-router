@@ -141,8 +141,10 @@ app.post('/', async (c) => {
 })
 
 app.get('/qr', async (c) => {
+  const currentUser = await getCurrentUser(c)
   const username = c.req.query('username')
   if (!username) return c.redirect('/users')
+  if (!currentUser || currentUser !== username) return c.text('Forbidden: cannot access other user QR', 403)
 
   const db = getDb(c.env)
   const users = await db.execQuery('SELECT TotpSecret FROM Users WHERE Username = ?', username)

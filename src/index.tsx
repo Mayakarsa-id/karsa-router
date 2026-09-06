@@ -1,5 +1,5 @@
 import { Hono } from 'hono'
-import { getCookie } from 'hono/cookie'
+import { getCookie, setCookie } from 'hono/cookie'
 import { DBServer } from './db'
 import { getDb, Bindings } from './shared/db-client'
 
@@ -16,7 +16,7 @@ const app = new Hono<{ Bindings: Bindings }>()
 
 // Auth Middleware
 app.use(async (c, next) => {
-  const publicPaths = ['/users/verify', '/users/qr', '/users', '/register']
+  const publicPaths = ['/users/verify', '/users', '/register']
   if (publicPaths.includes(c.req.path) || c.req.path.startsWith('/ai/openai-compatible/v1/')) {
     await next()
     return
@@ -80,6 +80,11 @@ app.post('/register', async (c) => {
 
   const apiKey = `sk-kr-${crypto.randomUUID().replace(/-/g, '')}`
   await db.execRun('UPDATE Users SET APIKEY = ? WHERE Username = ?', apiKey, username)
+
+  const token = crypto.randomUUID()
+  const expiresAt = new Date(Date.now() + 86400000).toISOString()
+  await db.execRun('INSERT INTO Sessions (Token, Username, ExpiresAt) VALUES (?, ?, ?)', token, username, expiresAt)
+  setCookie(c, 'session', token, { expires: new Date(expiresAt), httpOnly: true, path: '/' })
 
   return c.redirect(`/users/qr?username=${encodeURIComponent(username)}`)
 })
