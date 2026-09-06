@@ -1,3 +1,3 @@
-h1 {
-  font-family: Arial, Helvetica, sans-serif;
-}
+/* Bold Typographic theme — global overrides kept minimal, main styles in Layout */
+:root { --black:#0a0a0a; --white:#fffef7; --accent:#ff3b30 }
+html { background: var(--white) }
