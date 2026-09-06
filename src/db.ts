@@ -45,6 +45,7 @@ export class DBServer extends DurableObject {
         Id INTEGER PRIMARY KEY AUTOINCREMENT,
         InputToken INTEGER,
         OutputToken INTEGER,
+        CachedToken INTEGER DEFAULT 0,
         TriggerAt TEXT DEFAULT CURRENT_TIMESTAMP,
         APIKEY TEXT,
         Provider TEXT,
@@ -88,13 +89,14 @@ export class DBServer extends DurableObject {
       const info = this.ctx.storage.sql.exec(`SELECT sql FROM sqlite_master WHERE type='table' AND name='Usages'`).toArray() as any[]
       if (info.length > 0 && (info[0] as any).sql.includes('FOREIGN KEY')) {
         this.ctx.storage.sql.exec(`ALTER TABLE Usages RENAME TO Usages_old`);
-        this.ctx.storage.sql.exec(`CREATE TABLE Usages (Id INTEGER PRIMARY KEY AUTOINCREMENT, InputToken INTEGER, OutputToken INTEGER, TriggerAt TEXT DEFAULT CURRENT_TIMESTAMP, APIKEY TEXT, Provider TEXT, Model TEXT)`);
+        this.ctx.storage.sql.exec(`CREATE TABLE Usages (Id INTEGER PRIMARY KEY AUTOINCREMENT, InputToken INTEGER, OutputToken INTEGER, CachedToken INTEGER DEFAULT 0, TriggerAt TEXT DEFAULT CURRENT_TIMESTAMP, APIKEY TEXT, Provider TEXT, Model TEXT)`);
         this.ctx.storage.sql.exec(`INSERT INTO Usages (Id, InputToken, OutputToken, TriggerAt, APIKEY) SELECT Id, InputToken, OutputToken, TriggerAt, APIKEY FROM Usages_old`);
         this.ctx.storage.sql.exec(`DROP TABLE Usages_old`);
       }
     } catch {}
     try { this.ctx.storage.sql.exec(`ALTER TABLE Usages ADD COLUMN Provider TEXT`); } catch {}
     try { this.ctx.storage.sql.exec(`ALTER TABLE Usages ADD COLUMN Model TEXT`); } catch {}
+    try { this.ctx.storage.sql.exec(`ALTER TABLE Usages ADD COLUMN CachedToken INTEGER DEFAULT 0`); } catch {}
     try { this.ctx.storage.sql.exec(`ALTER TABLE Providers ADD COLUMN TimeoutMs INTEGER DEFAULT 30000`); } catch {}
     try { this.ctx.storage.sql.exec(`ALTER TABLE Users ADD COLUMN InputToken INTEGER DEFAULT 0`); } catch {}
     try { this.ctx.storage.sql.exec(`ALTER TABLE Users ADD COLUMN OutputToken INTEGER DEFAULT 0`); } catch {}

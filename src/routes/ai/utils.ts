@@ -11,7 +11,7 @@ export function parseTokens(text: string) {
 }
 
 async function recordUsageAndUserStats(db: any, apiKey: string, providerLabel: string, model: string, inputTokens: number, outputTokens: number, cachedTokens: number) {
-  await db.execRun('INSERT INTO Usages (APIKEY, InputToken, OutputToken, Provider, Model) VALUES (?, ?, ?, ?, ?)', apiKey, inputTokens, outputTokens, providerLabel, model)
+  await db.execRun('INSERT INTO Usages (APIKEY, InputToken, OutputToken, CachedToken, Provider, Model) VALUES (?, ?, ?, ?, ?, ?)', apiKey, inputTokens, outputTokens, cachedTokens, providerLabel, model)
   try {
     await db.execRun('UPDATE Users SET InputToken = COALESCE(InputToken,0) + ?, OutputToken = COALESCE(OutputToken,0) + ?, CachedToken = COALESCE(CachedToken,0) + ?, RequestCount = COALESCE(RequestCount,0) + 1 WHERE APIKEY = ?', inputTokens, outputTokens, cachedTokens, apiKey)
   } catch {}
