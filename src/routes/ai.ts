@@ -107,7 +107,7 @@ app.all('/*', async (c) => {
                 if (m[1] === 'prompt') inputTokens = parseInt(m[2], 10)
                 else outputTokens += parseInt(m[2], 10)
               }
-              await db.execRun('INSERT INTO Usages (APIKEY, InputToken, OutputToken) VALUES (?, ?, ?)', apiKey, inputTokens, outputTokens)
+              await db.execRun('INSERT INTO Usages (APIKEY, InputToken, OutputToken, Provider, Model) VALUES (?, ?, ?, ?, ?)', apiKey, inputTokens, outputTokens, targetProvider.Prefix || targetProvider.Label, requestedModel || '')
             } catch {}
             await writer.close()
           }
@@ -123,7 +123,7 @@ app.all('/*', async (c) => {
           if (m[1] === 'prompt') inputTokens = parseInt(m[2], 10)
           else outputTokens += parseInt(m[2], 10)
         }
-        await db.execRun('INSERT INTO Usages (APIKEY, InputToken, OutputToken) VALUES (?, ?, ?)', apiKey, inputTokens, outputTokens)
+        await db.execRun('INSERT INTO Usages (APIKEY, InputToken, OutputToken, Provider, Model) VALUES (?, ?, ?, ?, ?)', apiKey, inputTokens, outputTokens, targetProvider.Prefix || targetProvider.Label, requestedModel || '')
         const headers = new Headers(resp.headers)
         // ensure correct length after buffering
         headers.delete('content-length')

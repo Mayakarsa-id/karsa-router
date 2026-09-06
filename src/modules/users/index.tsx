@@ -15,7 +15,13 @@ app.get('/', async (c) => {
 
   const db = getDb(c.env)
   const users = await db.execQuery('SELECT * FROM Users WHERE Username = ?', username)
-  const user = users[0]
+  const user = users[0] as any
+  let usages: any[] = []
+  if (user.APIKEY) {
+    try {
+      usages = await db.execQuery('SELECT * FROM Usages WHERE APIKEY = ? ORDER BY Id DESC LIMIT 10', user.APIKEY) as any[]
+    } catch {}
+  }
 
   return c.html(
     <Layout user={username}>
@@ -34,7 +40,32 @@ app.get('/', async (c) => {
           <button type="submit">Generate API Key</button>
         </form>
       )}
-      
+
+      <h3>Usage Logs (10 newest)</h3>
+      <table border={1} cellpadding={8} style={{ borderCollapse: 'collapse', width: '100%' }}>
+        <thead>
+          <tr>
+            <th>#</th><th>Provider</th><th>Model</th><th>Input Token</th><th>Output Token</th><th>Timestamp</th>
+          </tr>
+        </thead>
+        <tbody>
+          {usages.length === 0 ? (
+            <tr><td colspan={6} style={{ textAlign: 'center' }}>No usage yet</td></tr>
+          ) : (
+            usages.map((u: any, i: number) => (
+              <tr>
+                <td>{i + 1}</td>
+                <td>{u.Provider || '-'}</td>
+                <td>{u.Model || '-'}</td>
+                <td>{u.InputToken}</td>
+                <td>{u.OutputToken}</td>
+                <td>{u.TriggerAt}</td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+
       <br />
       <a href="/providers">Go to Providers</a>
     </Layout>
