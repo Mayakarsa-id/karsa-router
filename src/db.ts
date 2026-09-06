@@ -52,6 +52,25 @@ export class DBServer extends DurableObject {
         ExpiresAt TEXT,
         FOREIGN KEY (Username) REFERENCES Users(Username) ON DELETE CASCADE
       );
+
+      CREATE TABLE IF NOT EXISTS Combos (
+        ComboId TEXT PRIMARY KEY,
+        Username TEXT,
+        Name TEXT,
+        CreatedAt TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (Username) REFERENCES Users(Username) ON DELETE CASCADE,
+        UNIQUE(Username, Name)
+      );
+
+      CREATE TABLE IF NOT EXISTS ComboModels (
+        Id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ComboId TEXT,
+        ProviderId TEXT,
+        ModelId TEXT,
+        Position INTEGER DEFAULT 0,
+        FOREIGN KEY (ComboId) REFERENCES Combos(ComboId) ON DELETE CASCADE,
+        FOREIGN KEY (ProviderId) REFERENCES Providers(ProviderId) ON DELETE CASCADE
+      );
     `);
     try {
       this.ctx.storage.sql.exec(`ALTER TABLE Users ADD COLUMN IsVerified INTEGER DEFAULT 0`);

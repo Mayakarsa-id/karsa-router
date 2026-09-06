@@ -16,6 +16,7 @@ export const Layout = (props: { children: any; user?: string }) => (
         <div>
           <a href="/users">Dashboard</a>
           <a href="/providers">Providers</a>
+          <a href="/combos">Combos</a>
         </div>
         <div>
           {props.user ? (
