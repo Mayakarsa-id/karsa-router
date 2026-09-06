@@ -97,7 +97,6 @@ app.get('/:id/edit', async (c) => {
   if (providers.length === 0) return c.redirect('/providers')
   const provider = providers[0]
   const keys = await db.execQuery('SELECT * FROM Keys WHERE ProviderId = ?', providerId)
-  const usages = await db.execQuery('SELECT * FROM Usages WHERE APIKEY IN (SELECT APIKEY FROM Keys WHERE ProviderId = ?)', providerId)
 
   return c.html(
     <Layout user={username}>
@@ -159,27 +158,6 @@ app.get('/:id/edit', async (c) => {
           </tbody>
         </table>
       )}
-
-      <h3>Usage Logs</h3>
-      {(usages as any[]).length === 0 ? (
-        <p style="border:3px solid #000; padding:14px; background:#f2f2f2;">No usage for this provider.</p>
-      ) : (
-        <table>
-          <thead><tr><th>Key</th><th>Input</th><th>Output</th><th>Cached</th><th>Date</th></tr></thead>
-          <tbody>
-            {(usages as any[]).map((u: any) => (
-              <tr>
-                <td style="font-family:ui-monospace,monospace; font-size:11px; word-break:break-all;">{u.APIKEY}</td>
-                <td>{u.InputToken ?? 0}</td>
-                <td>{u.OutputToken ?? 0}</td>
-                <td>{(u as any).CachedToken ?? 0}</td>
-                <td style="white-space:nowrap; font-size:12px;"><span data-ts={u.TriggerAt}>{u.TriggerAt}</span></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-      <script dangerouslySetInnerHTML={{ __html: `document.querySelectorAll('[data-ts]').forEach(el=>{try{const v=el.getAttribute('data-ts');const d=new Date(v.replace(' ','T')+(v.endsWith('Z')?'':'Z'));el.textContent=d.toLocaleString();}catch{}})` }}></script>
     </Layout>
   )
 })
