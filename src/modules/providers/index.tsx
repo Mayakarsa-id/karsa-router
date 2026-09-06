@@ -81,6 +81,9 @@ app.get('/:id/edit', async (c) => {
         </select>
         <button type="submit">Update</button>
       </form>
+      <form method="post" action={`/providers/${providerId}/delete`}>
+        <button type="submit" style={{color: 'red'}}>Delete Provider</button>
+      </form>
 
       <h3>API Keys</h3>
       <form method="post" action={`/providers/${providerId}/add-key`}>
@@ -126,6 +129,15 @@ app.post('/:id/add-key', async (c) => {
   const { APIKEY } = await c.req.parseBody()
   await getDb(c.env).execRun('INSERT INTO Keys (APIKEY, ProviderId) VALUES (?, ?)', APIKEY, providerId)
   return c.redirect(`/providers/${providerId}/edit`)
+})
+
+app.post('/:id/delete', async (c) => {
+  const username = await getCurrentUser(c)
+  if (!username) return c.redirect('/users/verify')
+
+  const providerId = c.req.param('id')
+  await getDb(c.env).execRun('DELETE FROM Providers WHERE ProviderId = ? AND Username = ?', providerId, username)
+  return c.redirect('/providers')
 })
 
 app.get('/:id/delete-key/:key', async (c) => {
