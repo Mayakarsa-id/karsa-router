@@ -5,6 +5,14 @@ import { Layout } from '../../shared/layout'
 
 const app = new Hono<{ Bindings: Bindings }>()
 
+async function getCurrentUser(c: any) {
+  const token = getCookie(c, 'session')
+  if (!token) return null
+  const db = getDb(c.env)
+  const session = await db.execQuery('SELECT Username FROM Sessions WHERE Token = ? AND ExpiresAt > datetime("now")', token)
+  return session.length > 0 ? session[0].Username : null
+}
+
 // --- TOTP Utilities ---
 
 function generateBase32Secret(length = 16) {
