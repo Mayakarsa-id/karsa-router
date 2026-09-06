@@ -8,7 +8,7 @@ import combosModule from './modules/combos'
 import keysModule from './modules/keys'
 import usagesModule from './modules/usages'
 import registerRoutes from './routes/register'
-import aiRoutes from './routes/ai'
+import aiRoutes from './routes/ai/index'
 
 export { DBServer }
 
