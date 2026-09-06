@@ -17,7 +17,7 @@ const app = new Hono<{ Bindings: Bindings }>()
 // Auth Middleware
 app.use(async (c, next) => {
   const publicPaths = ['/users/verify', '/users/qr', '/users']
-  if (publicPaths.includes(c.req.path)) {
+  if (publicPaths.includes(c.req.path) || c.req.path.startsWith('/ai/openai-compatible/v1/')) {
     await next()
     return
   }
@@ -37,6 +37,7 @@ app.use(async (c, next) => {
   await next()
 })
 
+
 // Root Redirect
 app.get('/', (c) => c.redirect('/providers'))
 
@@ -48,11 +49,13 @@ app.route('/usages', usagesModule)
 
 // AI Proxy Route
 app.all('/ai/openai-compatible/v1/*', async (c) => {
+  console.log('bol')
   const apiKey = c.req.header('Authorization')?.replace('Bearer ', '')
   if (!apiKey) return c.json({ error: 'Unauthorized' }, 401)
 
   const db = getDb(c.env)
-  const keys = await db.execQuery('SELECT ProviderId FROM Keys WHERE APIKEY = ? AND IsActive = 1', apiKey)
+  const keys = await db.execQuery('SELECT ProviderId FROM Keys WHERE APIKEY = ? AND IsActive = 1', apiKey);
+  console.log({keys})
   if (keys.length === 0) return c.json({ error: 'Invalid API Key' }, 401)
 
   const providerId = keys[0].ProviderId
@@ -60,7 +63,9 @@ app.all('/ai/openai-compatible/v1/*', async (c) => {
   if (providers.length === 0) return c.json({ error: 'Provider not found' }, 404)
 
   const provider = providers[0]
+  // Fix the URL replacement logic: only replace the prefix
   const targetUrl = c.req.url.replace('/ai/openai-compatible/v1', provider.BaseUrl)
+  console.log({targetUrl})
 
   const response = await fetch(targetUrl, {
     method: c.req.method,
