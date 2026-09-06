@@ -1,12 +1,25 @@
 import { Hono } from 'hono'
-import { renderer } from './renderer'
+import { DBServer } from './db'
+import type { Bindings } from './shared/db-client'
 
-const app = new Hono()
+// Domain Modules
+import usersModule from './modules/users'
+import providersModule from './modules/providers'
+import keysModule from './modules/keys'
+import usagesModule from './modules/usages'
 
-app.use(renderer)
+// Export DO class for Cloudflare bindings
+export { DBServer }
 
-app.get('/', (c) => {
-  return c.render(<h1>Hello!</h1>)
-})
+const app = new Hono<{ Bindings: Bindings }>()
+
+// Root Redirect
+app.get('/', (c) => c.redirect('/users'))
+
+// Mount Modular Routes
+app.route('/users', usersModule)
+app.route('/providers', providersModule)
+app.route('/keys', keysModule)
+app.route('/usages', usagesModule)
 
 export default app
