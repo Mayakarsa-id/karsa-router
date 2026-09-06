@@ -57,16 +57,33 @@ app.all('/ai/openai-compatible/v1/*', async (c) => {
   const users = await db.execQuery('SELECT Username FROM Users WHERE APIKEY = ?', apiKey)
   if (users.length === 0) return c.json({ error: 'Invalid API Key' }, 401)
   const username = users[0].Username
-
-  // For now, assume user only has one provider, or pass provider in path.
-  // Given user requirement: request using user APIKEY.
-  // We need to map which provider the user wants to use.
-  // Let's assume we use the first provider of the user for simplicity until further specification.
-  const providers = await db.execQuery('SELECT * FROM Providers WHERE Username = ? LIMIT 1', username)
+  const providers = await db.execQuery('SELECT * FROM Providers WHERE Username = ?', username)
   if (providers.length === 0) return c.json({ error: 'Provider not found for user' }, 404)
 
-  const provider = providers[0]
-  const targetUrl = c.req.url.replace(/^.*?\/ai\/openai-compatible\/v1\//, provider.BaseUrl)
+  if (c.req.path.endsWith('/models')) {
+    const results = await Promise.allSettled(
+      providers.map(async (p) => {
+        const url = `${p.BaseUrl.replace(/\/$/, '')}/models`
+        const response = await fetch(url, { headers: c.req.raw.headers })
+        if (!response.ok) throw new Error(`Failed to fetch models from ${p.Label}`)
+        const data = await response.json()
+        return (data as any).data.map((m: any) => ({
+          ...m,
+          id: `${p.Prefix}/${m.id}`,
+        }))
+      })
+    )
+
+    const allModels = results
+      .filter((r) => r.status === 'fulfilled')
+      .flatMap((r) => (r as PromiseFulfilledResult<any>).value)
+    
+    return c.json({ data: allModels })
+  }
+
+  // Existing Proxy logic
+  const provider = providers[0] // Default to first for now
+  const targetUrl = c.req.url.replace(/^.*?\/ai\/openai-compatible\/v1\//, `${provider.BaseUrl.replace(/\/$/, '')}/`)
 
   const response = await fetch(targetUrl, {
     method: c.req.method,
@@ -74,7 +91,6 @@ app.all('/ai/openai-compatible/v1/*', async (c) => {
     body: c.req.raw.body,
   })
 
-  // Record usage (using user APIKEY)
   await db.execRun('INSERT INTO Usages (APIKEY, InputToken, OutputToken) VALUES (?, ?, ?)', apiKey, 0, 0)
 
   return response
