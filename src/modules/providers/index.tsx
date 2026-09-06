@@ -23,7 +23,6 @@ app.get('/', async (c) => {
     <Layout>
       <h2>My Providers</h2>
       <form method="post" action="/providers">
-        <input name="ProviderId" placeholder="Provider ID" required />
         <input name="Label" placeholder="Label" required />
         <input name="Prefix" placeholder="Prefix" required />
         <button type="submit">Create Provider</button>
@@ -43,7 +42,8 @@ app.post('/', async (c) => {
   const username = await getCurrentUser(c)
   if (!username) return c.redirect('/users/verify')
 
-  const { ProviderId, Label, Prefix } = await c.req.parseBody()
+  const { Label, Prefix } = await c.req.parseBody()
+  const ProviderId = crypto.randomUUID().slice(0, 8)
   await getDb(c.env).execRun('INSERT INTO Providers (ProviderId, Label, Prefix, Username) VALUES (?, ?, ?, ?)', ProviderId, Label, Prefix, username)
   return c.redirect('/providers')
 })
