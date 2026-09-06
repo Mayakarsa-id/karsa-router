@@ -21,7 +21,7 @@ app.use(async (c, next) => {
     await next()
     return
   }
-  
+
   const sessionToken = getCookie(c, 'session')
   if (!sessionToken) {
     return c.redirect('/users/verify')
@@ -29,11 +29,11 @@ app.use(async (c, next) => {
 
   const db = getDb(c.env)
   const session = await db.execQuery('SELECT * FROM Sessions WHERE Token = ? AND ExpiresAt > datetime("now")', sessionToken)
-  
+
   if (session.length === 0) {
     return c.redirect('/users/verify')
   }
-  
+
   await next()
 })
 
@@ -49,23 +49,24 @@ app.route('/usages', usagesModule)
 
 // AI Proxy Route
 app.all('/ai/openai-compatible/v1/*', async (c) => {
-  console.log('bol')
   const apiKey = c.req.header('Authorization')?.replace('Bearer ', '')
   if (!apiKey) return c.json({ error: 'Unauthorized' }, 401)
 
   const db = getDb(c.env)
-  const keys = await db.execQuery('SELECT ProviderId FROM Keys WHERE APIKEY = ? AND IsActive = 1', apiKey);
-  console.log({keys})
-  if (keys.length === 0) return c.json({ error: 'Invalid API Key' }, 401)
+  // Check if API key belongs to a user
+  const users = await db.execQuery('SELECT Username FROM Users WHERE APIKEY = ?', apiKey)
+  if (users.length === 0) return c.json({ error: 'Invalid API Key' }, 401)
+  const username = users[0].Username
 
-  const providerId = keys[0].ProviderId
-  const providers = await db.execQuery('SELECT * FROM Providers WHERE ProviderId = ?', providerId)
-  if (providers.length === 0) return c.json({ error: 'Provider not found' }, 404)
+  // For now, assume user only has one provider, or pass provider in path.
+  // Given user requirement: request using user APIKEY.
+  // We need to map which provider the user wants to use.
+  // Let's assume we use the first provider of the user for simplicity until further specification.
+  const providers = await db.execQuery('SELECT * FROM Providers WHERE Username = ? LIMIT 1', username)
+  if (providers.length === 0) return c.json({ error: 'Provider not found for user' }, 404)
 
   const provider = providers[0]
-  // Fix the URL replacement logic: only replace the prefix
-  const targetUrl = c.req.url.replace('/ai/openai-compatible/v1', provider.BaseUrl)
-  console.log({targetUrl})
+  const targetUrl = c.req.url.replace(/^.*?\/ai\/openai-compatible\/v1\//, provider.BaseUrl)
 
   const response = await fetch(targetUrl, {
     method: c.req.method,
@@ -73,8 +74,8 @@ app.all('/ai/openai-compatible/v1/*', async (c) => {
     body: c.req.raw.body,
   })
 
-  // Record usage
-  await db.execRun('INSERT INTO Usages (APIKEY, InputToken, OutputToken) VALUES (?, ?, ?)', apiKey, 0, 0) // Placeholder for actual token counting
+  // Record usage (using user APIKEY)
+  await db.execRun('INSERT INTO Usages (APIKEY, InputToken, OutputToken) VALUES (?, ?, ?)', apiKey, 0, 0)
 
   return response
 })

@@ -71,29 +71,51 @@ async function verifyTOTP(secret: string, code: string): Promise<boolean> {
 // --- Routes ---
 
 app.get('/', async (c) => {
+  const username = await getCurrentUser(c)
+  if (!username) return c.redirect('/users/verify')
+
   const db = getDb(c.env)
-  const users = await db.execQuery('SELECT * FROM Users')
+  const users = await db.execQuery('SELECT * FROM Users WHERE Username = ?', username)
+  const user = users[0]
+
   return c.html(
-    <Layout>
-      <h2>Users</h2>
-      <a href="/users/logout">Logout</a>
-      <form method="post" action="/users">
-        <input name="Username" placeholder="Username" required />
-        <button type="submit">Create User</button>
-      </form>
-      <ul>
-        {users.map((u: any) => (
-          <li>
-            <strong>{u.Username}</strong> (Created: {u.Created_At})
-            <br />
-            <a href={`/users/qr?username=${u.Username}`}>Setup Authenticator</a> |
-            <a href={`/users/verify?username=${u.Username}`}>Verify Login</a> |
-            <a href={`/users/delete?id=${u.Username}`} style={{ color: 'red' }}>Delete</a>
-          </li>
-        ))}
-      </ul>
+    <Layout user={username}>
+      <h2>Dashboard</h2>
+      <h3>Your API Key</h3>
+      {user.APIKEY ? (
+        <div>
+          <code>{user.APIKEY}</code>
+          <form method="post" action="/users/revoke-key">
+            <button type="submit">Revoke Key</button>
+          </form>
+        </div>
+      ) : (
+        <form method="post" action="/users/generate-key">
+          <button type="submit">Generate API Key</button>
+        </form>
+      )}
+      
+      <br />
+      <a href="/providers">Go to Providers</a>
     </Layout>
   )
+})
+
+app.post('/generate-key', async (c) => {
+  const username = await getCurrentUser(c)
+  if (!username) return c.redirect('/users/verify')
+
+  const apiKey = `sk-kr-${crypto.randomUUID().replace(/-/g, '')}`
+  await getDb(c.env).execRun('UPDATE Users SET APIKEY = ? WHERE Username = ?', apiKey, username)
+  return c.redirect('/users')
+})
+
+app.post('/revoke-key', async (c) => {
+  const username = await getCurrentUser(c)
+  if (!username) return c.redirect('/users/verify')
+
+  await getDb(c.env).execRun('UPDATE Users SET APIKEY = NULL WHERE Username = ?', username)
+  return c.redirect('/users')
 })
 
 app.post('/', async (c) => {
