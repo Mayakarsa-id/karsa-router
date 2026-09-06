@@ -28,17 +28,24 @@ app.get('/', async (c) => {
       <h2>Dashboard</h2>
       <h3>Your API Key</h3>
       {user.APIKEY ? (
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <input id="apiKey" value={user.APIKEY} readOnly style={{ width: '300px' }} />
-          <button onclick="navigator.clipboard.writeText(document.getElementById('apiKey').value).then(() => alert('Copied!'))">Copy</button>
-          <form method="post" action="/users/revoke-key">
-            <button type="submit">Revoke Key</button>
-          </form>
+        <div style="border:3px solid #000; padding:14px; background:#fff;">
+          <div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; font-weight:700; margin-bottom:8px;">API Key — keep secret</div>
+          <div style="display:flex; gap:10px; align-items:stretch; flex-wrap:wrap;">
+            <input id="apiKey" value={user.APIKEY} readOnly style="flex:1 1 340px; font-family:ui-monospace,monospace; font-size:13px; letter-spacing:0.02em;" />
+            <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('apiKey').value).then(()=>{const b=event.target;b.textContent='Copied!';setTimeout(()=>b.textContent='Copy',1500)})">Copy</button>
+            <form method="post" action="/users/revoke-key" style="margin:0; border:none; padding:0; box-shadow:none; background:none;">
+              <button type="submit">Revoke</button>
+            </form>
+          </div>
+          <div style="font-size:12px; margin-top:8px;">Use as <code>Authorization: Bearer sk-kr-...</code></div>
         </div>
       ) : (
-        <form method="post" action="/users/generate-key">
-          <button type="submit">Generate API Key</button>
-        </form>
+        <div style="border:3px solid #000; padding:14px; background:#f2f2f2;">
+          <p style="margin:0 0 10px; font-size:13px;">No API key yet — generate to call <code>/ai/openai-compatible/v1/*</code></p>
+          <form method="post" action="/users/generate-key" style="margin:0; border:none; padding:0; box-shadow:none; background:none;">
+            <button type="submit">Generate API Key</button>
+          </form>
+        </div>
       )}
 
       <h3>User Stats</h3>
