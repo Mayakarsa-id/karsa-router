@@ -77,12 +77,13 @@ app.get('/', async (c) => {
                 <td>{u.InputToken ?? 0}</td>
                 <td>{u.OutputToken ?? 0}</td>
                 <td>{u.CachedToken ?? 0}</td>
-                <td>{u.TriggerAt}</td>
+                <td><span data-ts={u.TriggerAt}>{u.TriggerAt}</span></td>
               </tr>
             ))
           )}
         </tbody>
       </table>
+      <script dangerouslySetInnerHTML={{ __html: `document.querySelectorAll('[data-ts]').forEach(el=>{try{const v=el.getAttribute('data-ts');const d=new Date(v.replace(' ','T')+(v.endsWith('Z')?'':'Z'));el.textContent=d.toLocaleString();}catch{}})` }}></script>
 
       <br />
       <a href="/providers">Go to Providers</a>
