@@ -41,8 +41,7 @@ export class DBServer extends DurableObject {
         InputToken INTEGER,
         OutputToken INTEGER,
         TriggerAt TEXT DEFAULT CURRENT_TIMESTAMP,
-        APIKEY TEXT,
-        FOREIGN KEY (APIKEY) REFERENCES Keys(APIKEY) ON DELETE CASCADE
+        APIKEY TEXT
       );
 
       CREATE TABLE IF NOT EXISTS Sessions (
@@ -57,6 +56,16 @@ export class DBServer extends DurableObject {
     } catch {}
     try {
       this.ctx.storage.sql.exec(`ALTER TABLE Users ADD COLUMN APIKEY TEXT`);
+    } catch {}
+    // migrate Usages FK removal for existing DBs
+    try {
+      const info = this.ctx.storage.sql.exec(`SELECT sql FROM sqlite_master WHERE type='table' AND name='Usages'`).toArray() as any[]
+      if (info.length > 0 && (info[0] as any).sql.includes('FOREIGN KEY')) {
+        this.ctx.storage.sql.exec(`ALTER TABLE Usages RENAME TO Usages_old`);
+        this.ctx.storage.sql.exec(`CREATE TABLE Usages (Id INTEGER PRIMARY KEY AUTOINCREMENT, InputToken INTEGER, OutputToken INTEGER, TriggerAt TEXT DEFAULT CURRENT_TIMESTAMP, APIKEY TEXT)`);
+        this.ctx.storage.sql.exec(`INSERT INTO Usages (Id, InputToken, OutputToken, TriggerAt, APIKEY) SELECT Id, InputToken, OutputToken, TriggerAt, APIKEY FROM Usages_old`);
+        this.ctx.storage.sql.exec(`DROP TABLE Usages_old`);
+      }
     } catch {}
   }
 
