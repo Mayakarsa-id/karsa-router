@@ -147,11 +147,11 @@ app.get('/:id/edit', async (c) => {
         <p class="card-muted">No keys yet.</p>
       ) : (
         <table>
-          <thead><tr><th>API Key</th><th></th></tr></thead>
+          <thead><tr><th>API Key (censored)</th><th></th></tr></thead>
           <tbody>
             {(keys as any[]).map((k: any) => (
               <tr>
-                <td style="font-family:ui-monospace,monospace; font-size:12px; word-break:break-all;">{k.APIKEY}</td>
+                <td style="font-family:ui-monospace,monospace; font-size:12px; word-break:break-all;">{`${(k.APIKEY as string).slice(0, 8)}${'•'.repeat(8)}${(k.APIKEY as string).slice(-4)}`}</td>
                 <td style="white-space:nowrap;"><a href={`/providers/${providerId}/delete-key/${k.APIKEY}`}>Remove</a></td>
               </tr>
             ))}
