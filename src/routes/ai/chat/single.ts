@@ -1,4 +1,4 @@
-import { buildTargetUrl, setProviderHeaders, handleSuccess } from '../utils'
+import { buildTargetUrl, setProviderHeaders, handleSuccess, fetchWithTimeout, getTimeoutMs } from '../utils'
 
 export async function handleSingle(c: any, db: any, apiKey: string, providers: any[], requestedModel: string | undefined, bodyTextForForward: string | undefined) {
   let targetProvider: any = providers[0]
@@ -26,16 +26,24 @@ export async function handleSingle(c: any, db: any, apiKey: string, providers: a
   const targetUrl = buildTargetUrl(c.req.url, targetProvider.BaseUrl)
 
   let lastResponse: Response | null = null
+  const timeout = getTimeoutMs(targetProvider)
   for (const kr of keyRowsAll) {
     const providerKey = kr.APIKEY as string
     const forwardHeaders = new Headers(c.req.raw.headers)
     setProviderHeaders(forwardHeaders, providerKey, targetProvider.Type)
     if (forwardBody && !forwardHeaders.has('content-type')) forwardHeaders.set('content-type', 'application/json')
-    const resp = await fetch(targetUrl, {
-      method: c.req.method,
-      headers: forwardHeaders,
-      body: forwardBody && c.req.method !== 'GET' && c.req.method !== 'HEAD' ? forwardBody : undefined,
-    })
+    let resp: Response
+    try {
+      resp = await fetchWithTimeout(targetUrl, {
+        method: c.req.method,
+        headers: forwardHeaders,
+        body: forwardBody && c.req.method !== 'GET' && c.req.method !== 'HEAD' ? forwardBody : undefined,
+      }, timeout)
+    } catch (e: any) {
+      console.log(`provider ${targetProvider.Prefix} key ${providerKey.slice(0, 8)}... timeout/error ${e?.message || e}, trying next`)
+      lastResponse = new Response(`Provider ${targetProvider.Prefix} timeout: ${e?.message || e}`, { status: 504 })
+      continue
+    }
     if (resp.ok) return await handleSuccess(resp, db, apiKey, targetProvider.Prefix, literalModel)
     lastResponse = resp
     console.log(`provider ${targetProvider.Prefix} key ${providerKey.slice(0, 8)}... failed ${resp.status}, trying next`)

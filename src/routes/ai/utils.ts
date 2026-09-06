@@ -54,3 +54,25 @@ export function setProviderHeaders(headers: Headers, providerKey: string, type: 
   headers.set('Authorization', `Bearer ${providerKey}`)
   if (type === 'anthropic') headers.set('x-api-key', providerKey)
 }
+
+export const DEFAULT_TIMEOUT_MS = 30000
+
+export function getTimeoutMs(provider: any): number {
+  const t = provider?.TimeoutMs
+  if (typeof t === 'number') return t
+  if (typeof t === 'string') {
+    const n = parseInt(t, 10)
+    if (!isNaN(n)) return n
+  }
+  return DEFAULT_TIMEOUT_MS
+}
+
+export async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: number): Promise<Response> {
+  const controller = new AbortController()
+  const t = setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    return await fetch(url, { ...init, signal: controller.signal })
+  } finally {
+    clearTimeout(t)
+  }
+}

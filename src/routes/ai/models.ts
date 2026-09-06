@@ -1,4 +1,4 @@
-import { getDb } from '../../shared/db-client'
+import { fetchWithTimeout, getTimeoutMs } from './utils'
 
 export async function handleModels(c: any, db: any, username: string, providers: any[]) {
   const results = await Promise.allSettled(
@@ -9,7 +9,8 @@ export async function handleModels(c: any, db: any, username: string, providers:
       if (providerKey) headers['Authorization'] = `Bearer ${providerKey}`
       if (p.Type === 'anthropic' && providerKey) headers['x-api-key'] = providerKey
       const url = `${p.BaseUrl.replace(/\/$/, '')}/models`
-      const response = await fetch(url, { headers })
+      const timeout = getTimeoutMs(p)
+      const response = await fetchWithTimeout(url, { headers }, timeout)
       if (!response.ok) throw new Error(`Failed to fetch models from ${p.Label}: ${response.status}`)
       const data = (await response.json()) as any
       const list = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : []

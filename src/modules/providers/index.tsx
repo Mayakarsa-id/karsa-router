@@ -22,6 +22,7 @@ app.get('/', async (c) => {
           <option value="openai">OpenAI</option>
           <option value="anthropic">Anthropic</option>
         </select>
+        <input name="TimeoutMs" placeholder="Timeout ms (default 30000)" type="number" min="1000" />
         <button type="submit">Create Provider</button>
       </form>
       <ul>
@@ -39,14 +40,16 @@ app.post('/', async (c) => {
   const username = await getCurrentUser(c)
   if (!username) return c.redirect('/users/verify')
 
-  const { Label, Prefix, BaseUrl, Type } = await c.req.parseBody()
+  const { Label, Prefix, BaseUrl, Type, TimeoutMs } = await c.req.parseBody()
   if ((Prefix as string).trim().toLowerCase() === 'combo') {
     return c.text('Prefix "combo" is reserved and cannot be used', 400)
   }
+  const timeout = TimeoutMs ? parseInt(TimeoutMs as string, 10) : 30000
+  if (timeout < 1000 || timeout > 120000) return c.text('Timeout must be 1000-120000 ms', 400)
   const ProviderId = crypto.randomUUID().slice(0, 8)
   await getDb(c.env).execRun(
-    'INSERT INTO Providers (ProviderId, Label, Prefix, Username, BaseUrl, Type) VALUES (?, ?, ?, ?, ?, ?)',
-    ProviderId, Label, Prefix, username, BaseUrl, Type
+    'INSERT INTO Providers (ProviderId, Label, Prefix, Username, BaseUrl, Type, TimeoutMs) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    ProviderId, Label, Prefix, username, BaseUrl, Type, timeout
   )
   return c.redirect('/providers')
 })
@@ -74,6 +77,7 @@ app.get('/:id/edit', async (c) => {
           <option value="openai">OpenAI</option>
           <option value="anthropic">Anthropic</option>
         </select>
+        <input name="TimeoutMs" defaultValue={provider.TimeoutMs || 30000} type="number" min="1000" required />
         <button type="submit">Update</button>
       </form>
       <form method="post" action={`/providers/${providerId}/delete`}>
@@ -108,13 +112,15 @@ app.post('/:id/update', async (c) => {
   if (!username) return c.redirect('/users/verify')
 
   const providerId = c.req.param('id')
-  const { Label, Prefix, BaseUrl, Type } = await c.req.parseBody()
+  const { Label, Prefix, BaseUrl, Type, TimeoutMs } = await c.req.parseBody()
   if ((Prefix as string).trim().toLowerCase() === 'combo') {
     return c.text('Prefix "combo" is reserved and cannot be used', 400)
   }
+  const timeout = TimeoutMs ? parseInt(TimeoutMs as string, 10) : 30000
+  if (timeout < 1000 || timeout > 120000) return c.text('Timeout must be 1000-120000 ms', 400)
   await getDb(c.env).execRun(
-    'UPDATE Providers SET Label = ?, Prefix = ?, BaseUrl = ?, Type = ? WHERE ProviderId = ? AND Username = ?',
-    Label, Prefix, BaseUrl, Type, providerId, username
+    'UPDATE Providers SET Label = ?, Prefix = ?, BaseUrl = ?, Type = ?, TimeoutMs = ? WHERE ProviderId = ? AND Username = ?',
+    Label, Prefix, BaseUrl, Type, timeout, providerId, username
   )
   return c.redirect(`/providers/${providerId}/edit`)
 })

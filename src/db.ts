@@ -25,6 +25,7 @@ export class DBServer extends DurableObject {
         Username TEXT,
         BaseUrl TEXT,
         Type TEXT,
+        TimeoutMs INTEGER DEFAULT 30000,
         FOREIGN KEY (Username) REFERENCES Users(Username) ON DELETE CASCADE
       );
 
@@ -90,6 +91,7 @@ export class DBServer extends DurableObject {
     } catch {}
     try { this.ctx.storage.sql.exec(`ALTER TABLE Usages ADD COLUMN Provider TEXT`); } catch {}
     try { this.ctx.storage.sql.exec(`ALTER TABLE Usages ADD COLUMN Model TEXT`); } catch {}
+    try { this.ctx.storage.sql.exec(`ALTER TABLE Providers ADD COLUMN TimeoutMs INTEGER DEFAULT 30000`); } catch {}
   }
 
   async execQuery(sql: string, ...params: any[]) {
