@@ -182,9 +182,10 @@ app.get('/verify', (c) => {
           <label>Username</label>
           <input name="Username" placeholder="Username" required value={username || ''} />
         </div>
-        <div style="display:flex; flex-direction:column; gap:6px;">
+        <div style="display:flex; flex-direction:column; gap:6px; align-items:center;">
           <label>6-digit Code</label>
-          <input name="Code" placeholder="Enter 6-digit code" maxLength={6} required autocomplete="off" />
+          <input name="Code" placeholder="· · · · · ·" maxLength={6} required autocomplete="off" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="text-align:center; letter-spacing:0.55em; font-size:32px; font-weight:900; padding:16px 12px; max-width:340px; font-family:ui-monospace,monospace; text-indent:0.55em;" />
+          <span style="font-size:11px; letter-spacing:0.06em; opacity:0.7;">Authenticator app • 30s window</span>
         </div>
         <div><button type="submit">Verify</button></div>
       </form>
