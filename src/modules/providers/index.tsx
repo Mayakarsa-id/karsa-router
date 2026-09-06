@@ -105,26 +105,26 @@ app.get('/:id/edit', async (c) => {
       <form method="post" action={`/providers/${providerId}/update`} style="display:grid; grid-template-columns:1fr 1fr; gap:14px; align-items:end;">
         <div style="display:flex; flex-direction:column; gap:6px;">
           <label>Label</label>
-          <input name="Label" defaultValue={provider.Label} required />
+          <input name="Label" value={provider.Label} required />
         </div>
         <div style="display:flex; flex-direction:column; gap:6px;">
           <label>Prefix</label>
-          <input name="Prefix" defaultValue={provider.Prefix} required />
+          <input name="Prefix" value={provider.Prefix} required />
         </div>
         <div style="display:flex; flex-direction:column; gap:6px; grid-column:span 2;">
           <label>Base URL</label>
-          <input name="BaseUrl" defaultValue={provider.BaseUrl} required />
+          <input name="BaseUrl" value={provider.BaseUrl} required />
         </div>
         <div style="display:flex; flex-direction:column; gap:6px;">
           <label>Type</label>
-          <select name="Type" defaultValue={provider.Type} required>
+          <select name="Type" value={provider.Type} required>
             <option value="openai">OpenAI</option>
             <option value="anthropic">Anthropic</option>
           </select>
         </div>
         <div style="display:flex; flex-direction:column; gap:6px;">
           <label>Timeout ms</label>
-          <input name="TimeoutMs" defaultValue={provider.TimeoutMs || 30000} type="number" min="1000" required />
+          <input name="TimeoutMs" value={provider.TimeoutMs || 30000} type="number" min="1000" required />
         </div>
         <div style="grid-column:span 2; display:flex; gap:10px;">
           <button type="submit">Update Provider</button>

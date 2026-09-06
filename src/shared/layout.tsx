@@ -1,8 +1,10 @@
+import { Link } from "vite-ssr-components/hono";
+
 export const Layout = (props: { children: any; user?: string }) => (
   <html>
     <head>
       <title>Karsa Router</title>
-      <link rel="stylesheet" href="/src/style.css" />
+      <Link rel="stylesheet" href="/src/style.css" />
       <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme:dark)').matches))document.documentElement.classList.add('dark')}catch{}})()` }}></script>
     </head>
     <body>
