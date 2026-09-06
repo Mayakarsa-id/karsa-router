@@ -13,17 +13,35 @@ app.get('/', async (c) => {
   const providers = await db.execQuery('SELECT * FROM Providers WHERE Username = ?', username)
   return c.html(
     <Layout user={username}>
-      <h2>Combos (multi provider/model fallback)</h2>
-      <form method="post" action="/combos">
-        <input name="Name" placeholder="Combo name (e.g. fast)" required pattern="[a-zA-Z0-9_-]+" title="alphanumeric dash underscore" />
-        <button type="submit">Create Combo</button>
+      <h2>Combos</h2>
+      <p style="border-left:6px solid #000; padding-left:10px; font-size:13px;">Multi provider/model fallback — use <code>combo/NAME</code> as model</p>
+      <form method="post" action="/combos" style="display:grid; grid-template-columns:1fr auto; gap:14px; align-items:end;">
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <label>Name</label>
+          <input name="Name" placeholder="e.g. fast" required pattern="[a-zA-Z0-9_-]+" title="alphanumeric dash underscore" />
+        </div>
+        <div><button type="submit">Create Combo</button></div>
       </form>
-      <ul>
-        {(combos as any[]).map((co: any) => (
-          <li><a href={`/combos/${co.ComboId}`}>{co.Name} ({co.ComboId})</a></li>
-        ))}
-      </ul>
-      <p style="color:#666">Providers available for combo models: {(providers as any[]).map((p:any)=>`${p.Prefix} (${p.Label})`).join(', ') || 'none – create providers first'}</p>
+
+      <h3>Combos ({(combos as any[]).length})</h3>
+      {(combos as any[]).length === 0 ? (
+        <p style="border:3px solid #000; padding:14px; background:#f2f2f2;">No combos yet — create one above.</p>
+      ) : (
+        <table>
+          <thead><tr><th>Name</th><th>Model ID</th><th>Created</th><th></th></tr></thead>
+          <tbody>
+            {(combos as any[]).map((co: any) => (
+              <tr>
+                <td><strong>{co.Name}</strong><br/><span style="font-size:11px; opacity:0.7;">{co.ComboId}</span></td>
+                <td><code>combo/{co.Name}</code></td>
+                <td style="font-size:12px;">{co.CreatedAt ? new Date(co.CreatedAt.replace(' ','T')+'Z').toLocaleDateString() : '-'}</td>
+                <td><a href={`/combos/${co.ComboId}`}>Manage →</a></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      <p style="font-size:12px; border:2px solid #000; padding:8px; background:#fff;">Providers: {(providers as any[]).map((p:any)=>`${p.Prefix} (${p.Label})`).join(', ') || 'none — create providers first'}</p>
     </Layout>
   )
 })
@@ -56,33 +74,53 @@ app.get('/:id', async (c) => {
   return c.html(
     <Layout user={username}>
       <h2>Combo: {combo.Name}</h2>
-      <p><code>combo/{combo.Name}</code> – used as model id for fallback</p>
-      <form method="post" action={`/combos/${comboId}/delete`} style="display:inline"><button type="submit" style="color:red">Delete Combo</button></form>
-      <a href="/combos">← Back</a>
+      <p><code>combo/{combo.Name}</code> — fallback in order listed</p>
+      <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px;">
+        <form method="post" action={`/combos/${comboId}/delete`} style="margin:0; border:none; padding:0; box-shadow:none; background:none;"><button type="submit">Delete Combo</button></form>
+        <a href="/combos">← Back to Combos</a>
+      </div>
 
-      <h3>Models (fallback order)</h3>
-      <ol>
-        {(models as any[]).map((m: any) => (
-          <li>
-            {m.Prefix || m.ProviderId}/{m.ModelId} ({m.Label || ''})
-            <a href={`/combos/${comboId}/model/${m.Id}/delete`} style="color:red; margin-left:10px">Remove</a>
-            <a href={`/combos/${comboId}/model/${m.Id}/up`} style="margin-left:5px">↑</a>
-            <a href={`/combos/${comboId}/model/${m.Id}/down`} style="margin-left:5px">↓</a>
-          </li>
-        ))}
-        {(models as any[]).length === 0 && <li style="color:#999">No models yet</li>}
-      </ol>
+      <h3>Models — fallback order ({(models as any[]).length})</h3>
+      {(models as any[]).length === 0 ? (
+        <p style="border:3px solid #000; padding:14px; background:#f2f2f2;">No models yet — add below.</p>
+      ) : (
+        <table>
+          <thead><tr><th>#</th><th>Provider</th><th>Model ID</th><th></th></tr></thead>
+          <tbody>
+            {(models as any[]).map((m: any, idx: number) => (
+              <tr>
+                <td>{idx + 1}</td>
+                <td><code>{m.Prefix || m.ProviderId}</code><br/><span style="font-size:11px; opacity:0.7;">{m.Label || ''}</span></td>
+                <td><strong>{m.ModelId}</strong></td>
+                <td style="white-space:nowrap;">
+                  <a href={`/combos/${comboId}/model/${m.Id}/up`}>↑</a>
+                  <span> · </span>
+                  <a href={`/combos/${comboId}/model/${m.Id}/down`}>↓</a>
+                  <span> · </span>
+                  <a href={`/combos/${comboId}/model/${m.Id}/delete`}>Remove</a>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
 
-      <h4>Add Model</h4>
-      <form method="post" action={`/combos/${comboId}/model`}>
-        <select name="ProviderId" required>
-          <option value="">Select Provider</option>
-          {(providers as any[]).map((p: any) => (
-            <option value={p.ProviderId}>{p.Prefix} – {p.Label} ({p.ProviderId})</option>
-          ))}
-        </select>
-        <input name="ModelId" placeholder="Model id (e.g. gpt-4o-mini)" required />
-        <button type="submit">Add</button>
+      <h3>Add Model</h3>
+      <form method="post" action={`/combos/${comboId}/model`} style="display:grid; grid-template-columns:1fr 1fr auto; gap:14px; align-items:end;">
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <label>Provider</label>
+          <select name="ProviderId" required>
+            <option value="">Select Provider</option>
+            {(providers as any[]).map((p: any) => (
+              <option value={p.ProviderId}>{p.Prefix} — {p.Label} ({p.ProviderId})</option>
+            ))}
+          </select>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <label>Model ID</label>
+          <input name="ModelId" placeholder="e.g. gpt-4o-mini" required />
+        </div>
+        <div><button type="submit">Add</button></div>
       </form>
     </Layout>
   )
