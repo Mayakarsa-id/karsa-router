@@ -16,7 +16,7 @@ const app = new Hono<{ Bindings: Bindings }>()
 
 // Auth Middleware
 app.use(async (c, next) => {
-  const publicPaths = ['/users/verify', '/users/qr']
+  const publicPaths = ['/users/verify', '/users/qr', '/users']
   if (publicPaths.includes(c.req.path)) {
     await next()
     return
