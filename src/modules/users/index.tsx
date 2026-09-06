@@ -119,8 +119,6 @@ app.get('/', async (c) => {
 
 
 
-      <br />
-      <a href="/providers">Go to Providers</a>
     </Layout>
   )
 })
