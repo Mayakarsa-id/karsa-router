@@ -164,42 +164,68 @@ app.all('/ai/openai-compatible/v1/*', async (c) => {
     return c.json({ data: allModels, object: 'list' })
   }
 
-  // Existing Proxy logic - route by prefix: extract model prefix if present
-  // For now default to first provider, but try to infer from body/model param
-  let provider = providers[0]
+  // chat/completions - route by prefix/model and fallback across API keys
+  let targetProvider = providers[0]
+  let requestedModel: string | undefined
+  let bodyTextForForward: string | undefined
   try {
     const cloned = c.req.raw.clone()
-    const bodyText = await cloned.text()
-    if (bodyText) {
-      const bodyJson = JSON.parse(bodyText) as any
-      const modelId: string | undefined = bodyJson?.model
-      if (modelId && modelId.includes('/')) {
-        const prefix = modelId.split('/')[0]
-        const matched = providers.find((p: any) => p.Prefix === prefix)
-        if (matched) provider = matched
-      }
+    bodyTextForForward = await cloned.text()
+    if (bodyTextForForward) {
+      try {
+        const bodyJson = JSON.parse(bodyTextForForward) as any
+        requestedModel = bodyJson?.model
+        if (requestedModel && requestedModel.includes('/')) {
+          const prefix = requestedModel.split('/')[0]
+          const matched = providers.find((p: any) => p.Prefix === prefix)
+          if (matched) targetProvider = matched
+        }
+      } catch {}
     }
   } catch {}
-
-  const keyRows = await db.execQuery('SELECT APIKEY FROM Keys WHERE ProviderId = ? AND IsActive = 1 LIMIT 1', provider.ProviderId)
-  const providerKey = keyRows.length > 0 ? keyRows[0].APIKEY : ''
-  const targetUrl = c.req.url.replace(/^.*?\/ai\/openai-compatible\/v1\//, `${provider.BaseUrl.replace(/\/$/, '')}/`)
-
-  const forwardHeaders = new Headers(c.req.raw.headers)
-  if (providerKey) {
-    forwardHeaders.set('Authorization', `Bearer ${providerKey}`)
-    if (provider.Type === 'anthropic') forwardHeaders.set('x-api-key', providerKey)
+  // normalize body model to strip prefix before forwarding (provider expects raw model id)
+  let forwardBody: string | undefined = bodyTextForForward
+  if (requestedModel && requestedModel.includes('/') && targetProvider) {
+    try {
+      const j = JSON.parse(bodyTextForForward || '{}')
+      j.model = requestedModel.split('/').slice(1).join('/')
+      forwardBody = JSON.stringify(j)
+    } catch {}
   }
 
-  const response = await fetch(targetUrl, {
-    method: c.req.method,
-    headers: forwardHeaders,
-    body: c.req.raw.body,
-  })
+  const keyRowsAll = await db.execQuery('SELECT APIKEY FROM Keys WHERE ProviderId = ? AND IsActive = 1', targetProvider.ProviderId)
+  if (keyRowsAll.length === 0) return c.json({ error: 'No API keys for provider' }, 503)
+  const targetUrl = c.req.url.replace(/^.*?\/ai\/openai-compatible\/v1\//, `${targetProvider.BaseUrl.replace(/\/$/, '')}/`)
 
-  await db.execRun('INSERT INTO Usages (APIKEY, InputToken, OutputToken) VALUES (?, ?, ?)', apiKey, 0, 0)
+  let lastResponse: Response | null = null
+  for (const kr of keyRowsAll) {
+    const providerKey = (kr as any).APIKEY as string
+    const forwardHeaders = new Headers(c.req.raw.headers)
+    forwardHeaders.set('Authorization', `Bearer ${providerKey}`)
+    if (targetProvider.Type === 'anthropic') forwardHeaders.set('x-api-key', providerKey)
+    // ensure content-type for JSON body
+    if (forwardBody && !forwardHeaders.has('content-type')) forwardHeaders.set('content-type', 'application/json')
 
-  return response
+    const resp = await fetch(targetUrl, {
+      method: c.req.method,
+      headers: forwardHeaders,
+      body: forwardBody && c.req.method !== 'GET' && c.req.method !== 'HEAD' ? forwardBody : undefined,
+    })
+    if (resp.ok) {
+      await db.execRun('INSERT INTO Usages (APIKEY, InputToken, OutputToken) VALUES (?, ?, ?)', apiKey, 0, 0)
+      // stream back directly
+      return new Response(resp.body, { status: resp.status, headers: resp.headers })
+    }
+    lastResponse = resp
+    // fallback on non-2xx: try next key
+    console.log(`provider ${targetProvider.Prefix} key ${providerKey.slice(0,8)}... failed ${resp.status}, trying next`)
+  }
+  // all keys failed - return last error
+  if (lastResponse) {
+    const errText = await lastResponse.text()
+    return new Response(errText, { status: lastResponse.status, headers: lastResponse.headers })
+  }
+  return c.json({ error: 'All provider keys failed' }, 502)
 })
 
 export default app
