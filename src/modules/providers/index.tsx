@@ -40,6 +40,9 @@ app.post('/', async (c) => {
   if (!username) return c.redirect('/users/verify')
 
   const { Label, Prefix, BaseUrl, Type } = await c.req.parseBody()
+  if ((Prefix as string).trim().toLowerCase() === 'combo') {
+    return c.text('Prefix "combo" is reserved and cannot be used', 400)
+  }
   const ProviderId = crypto.randomUUID().slice(0, 8)
   await getDb(c.env).execRun(
     'INSERT INTO Providers (ProviderId, Label, Prefix, Username, BaseUrl, Type) VALUES (?, ?, ?, ?, ?, ?)',
@@ -106,6 +109,9 @@ app.post('/:id/update', async (c) => {
 
   const providerId = c.req.param('id')
   const { Label, Prefix, BaseUrl, Type } = await c.req.parseBody()
+  if ((Prefix as string).trim().toLowerCase() === 'combo') {
+    return c.text('Prefix "combo" is reserved and cannot be used', 400)
+  }
   await getDb(c.env).execRun(
     'UPDATE Providers SET Label = ?, Prefix = ?, BaseUrl = ?, Type = ? WHERE ProviderId = ? AND Username = ?',
     Label, Prefix, BaseUrl, Type, providerId, username
@@ -128,6 +134,10 @@ app.post('/:id/delete', async (c) => {
   if (!username) return c.redirect('/users/verify')
 
   const providerId = c.req.param('id')
+  const rows = await getDb(c.env).execQuery('SELECT Prefix FROM Providers WHERE ProviderId = ? AND Username = ?', providerId, username)
+  if (rows.length > 0 && (rows[0] as any).Prefix?.toLowerCase() === 'combo') {
+    return c.text('Provider with prefix "combo" is reserved and cannot be deleted', 400)
+  }
   await getDb(c.env).execRun('DELETE FROM Providers WHERE ProviderId = ? AND Username = ?', providerId, username)
   return c.redirect('/providers')
 })
