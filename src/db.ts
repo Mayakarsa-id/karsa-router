@@ -15,7 +15,11 @@ export class DBServer extends DurableObject {
         TotpSecret TEXT,
         APIKEY TEXT,
         IsVerified INTEGER DEFAULT 0,
-        Created_At TEXT DEFAULT CURRENT_TIMESTAMP
+        Created_At TEXT DEFAULT CURRENT_TIMESTAMP,
+        InputToken INTEGER DEFAULT 0,
+        OutputToken INTEGER DEFAULT 0,
+        CachedToken INTEGER DEFAULT 0,
+        RequestCount INTEGER DEFAULT 0
       );
 
       CREATE TABLE IF NOT EXISTS Providers (
@@ -92,6 +96,10 @@ export class DBServer extends DurableObject {
     try { this.ctx.storage.sql.exec(`ALTER TABLE Usages ADD COLUMN Provider TEXT`); } catch {}
     try { this.ctx.storage.sql.exec(`ALTER TABLE Usages ADD COLUMN Model TEXT`); } catch {}
     try { this.ctx.storage.sql.exec(`ALTER TABLE Providers ADD COLUMN TimeoutMs INTEGER DEFAULT 30000`); } catch {}
+    try { this.ctx.storage.sql.exec(`ALTER TABLE Users ADD COLUMN InputToken INTEGER DEFAULT 0`); } catch {}
+    try { this.ctx.storage.sql.exec(`ALTER TABLE Users ADD COLUMN OutputToken INTEGER DEFAULT 0`); } catch {}
+    try { this.ctx.storage.sql.exec(`ALTER TABLE Users ADD COLUMN CachedToken INTEGER DEFAULT 0`); } catch {}
+    try { this.ctx.storage.sql.exec(`ALTER TABLE Users ADD COLUMN RequestCount INTEGER DEFAULT 0`); } catch {}
   }
 
   async execQuery(sql: string, ...params: any[]) {

@@ -1,12 +1,20 @@
 export function parseTokens(text: string) {
-  let inputTokens = 0, outputTokens = 0
-  const re = /"(prompt|completion|reasoning)_tokens"\s*:\s*(\d+)/g
+  let inputTokens = 0, outputTokens = 0, cachedTokens = 0
+  const re = /"(prompt|completion|reasoning|cached)_tokens"\s*:\s*(\d+)/g
   let m: RegExpExecArray | null
   while ((m = re.exec(text)) !== null) {
     if (m[1] === 'prompt') inputTokens = parseInt(m[2], 10)
+    else if (m[1] === 'cached') cachedTokens = parseInt(m[2], 10)
     else outputTokens += parseInt(m[2], 10)
   }
-  return { inputTokens, outputTokens }
+  return { inputTokens, outputTokens, cachedTokens }
+}
+
+async function recordUsageAndUserStats(db: any, apiKey: string, providerLabel: string, model: string, inputTokens: number, outputTokens: number, cachedTokens: number) {
+  await db.execRun('INSERT INTO Usages (APIKEY, InputToken, OutputToken, Provider, Model) VALUES (?, ?, ?, ?, ?)', apiKey, inputTokens, outputTokens, providerLabel, model)
+  try {
+    await db.execRun('UPDATE Users SET InputToken = COALESCE(InputToken,0) + ?, OutputToken = COALESCE(OutputToken,0) + ?, CachedToken = COALESCE(CachedToken,0) + ?, RequestCount = COALESCE(RequestCount,0) + 1 WHERE APIKEY = ?', inputTokens, outputTokens, cachedTokens, apiKey)
+  } catch {}
 }
 
 export async function handleSuccess(resp: Response, db: any, apiKey: string, providerLabel: string, model: string) {
@@ -28,8 +36,8 @@ export async function handleSuccess(resp: Response, db: any, apiKey: string, pro
         }
       } finally {
         try {
-          const { inputTokens, outputTokens } = parseTokens(buffer)
-          await db.execRun('INSERT INTO Usages (APIKEY, InputToken, OutputToken, Provider, Model) VALUES (?, ?, ?, ?, ?)', apiKey, inputTokens, outputTokens, providerLabel, model)
+          const { inputTokens, outputTokens, cachedTokens } = parseTokens(buffer)
+          await recordUsageAndUserStats(db, apiKey, providerLabel, model, inputTokens, outputTokens, cachedTokens)
         } catch {}
         await writer.close()
       }
@@ -37,8 +45,8 @@ export async function handleSuccess(resp: Response, db: any, apiKey: string, pro
     return new Response(readable, { status: resp.status, headers: new Headers(resp.headers) })
   } else {
     const rawText = await resp.text()
-    const { inputTokens, outputTokens } = parseTokens(rawText)
-    await db.execRun('INSERT INTO Usages (APIKEY, InputToken, OutputToken, Provider, Model) VALUES (?, ?, ?, ?, ?)', apiKey, inputTokens, outputTokens, providerLabel, model)
+    const { inputTokens, outputTokens, cachedTokens } = parseTokens(rawText)
+    await recordUsageAndUserStats(db, apiKey, providerLabel, model, inputTokens, outputTokens, cachedTokens)
     const headers = new Headers(resp.headers)
     headers.delete('content-length')
     headers.delete('content-encoding')
