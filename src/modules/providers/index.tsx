@@ -102,40 +102,84 @@ app.get('/:id/edit', async (c) => {
   return c.html(
     <Layout user={username}>
       <h2>Edit Provider: {provider.Label}</h2>
-      <form method="post" action={`/providers/${providerId}/update`}>
-        <input name="Label" defaultValue={provider.Label} required />
-        <input name="Prefix" defaultValue={provider.Prefix} required />
-        <input name="BaseUrl" defaultValue={provider.BaseUrl} required />
-        <select name="Type" defaultValue={provider.Type} required>
-          <option value="openai">OpenAI</option>
-          <option value="anthropic">Anthropic</option>
-        </select>
-        <input name="TimeoutMs" defaultValue={provider.TimeoutMs || 30000} type="number" min="1000" required />
-        <button type="submit">Update</button>
+      <p><code>{provider.Prefix}</code> · <span style="font-size:12px; opacity:0.7;">{provider.ProviderId}</span></p>
+      <form method="post" action={`/providers/${providerId}/update`} style="display:grid; grid-template-columns:1fr 1fr; gap:14px; align-items:end;">
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <label>Label</label>
+          <input name="Label" defaultValue={provider.Label} required />
+        </div>
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <label>Prefix</label>
+          <input name="Prefix" defaultValue={provider.Prefix} required />
+        </div>
+        <div style="display:flex; flex-direction:column; gap:6px; grid-column:span 2;">
+          <label>Base URL</label>
+          <input name="BaseUrl" defaultValue={provider.BaseUrl} required />
+        </div>
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <label>Type</label>
+          <select name="Type" defaultValue={provider.Type} required>
+            <option value="openai">OpenAI</option>
+            <option value="anthropic">Anthropic</option>
+          </select>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <label>Timeout ms</label>
+          <input name="TimeoutMs" defaultValue={provider.TimeoutMs || 30000} type="number" min="1000" required />
+        </div>
+        <div style="grid-column:span 2; display:flex; gap:10px;">
+          <button type="submit">Update Provider</button>
+          <a href="/providers" style="align-self:center;">← Back</a>
+        </div>
       </form>
-      <form method="post" action={`/providers/${providerId}/delete`}>
-        <button type="submit" style={{color: 'red'}}>Delete Provider</button>
+      <form method="post" action={`/providers/${providerId}/delete`} style="margin:0; border:none; padding:0; box-shadow:none; background:none;">
+        <button type="submit">Delete Provider</button>
       </form>
 
-      <h3>API Keys</h3>
-      <form method="post" action={`/providers/${providerId}/add-key`}>
-        <input name="APIKEY" placeholder="New API Key" required />
-        <button type="submit">Add Key</button>
+      <h3>API Keys ({(keys as any[]).length})</h3>
+      <form method="post" action={`/providers/${providerId}/add-key`} style="display:grid; grid-template-columns:1fr auto; gap:14px; align-items:end;">
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <label>New API Key</label>
+          <input name="APIKEY" placeholder="sk-..." required />
+        </div>
+        <div><button type="submit">Add Key</button></div>
       </form>
-      <ul>
-        {keys.map((k: any) => (
-          <li>{k.APIKEY} <a href={`/providers/${providerId}/delete-key/${k.APIKEY}`} style={{color: 'red'}}>Delete</a></li>
-        ))}
-      </ul>
+      {(keys as any[]).length === 0 ? (
+        <p style="border:3px solid #000; padding:14px; background:#f2f2f2;">No keys yet.</p>
+      ) : (
+        <table>
+          <thead><tr><th>API Key</th><th></th></tr></thead>
+          <tbody>
+            {(keys as any[]).map((k: any) => (
+              <tr>
+                <td style="font-family:ui-monospace,monospace; font-size:12px; word-break:break-all;">{k.APIKEY}</td>
+                <td style="white-space:nowrap;"><a href={`/providers/${providerId}/delete-key/${k.APIKEY}`}>Remove</a></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
 
       <h3>Usage Logs</h3>
-      <ul>
-        {usages.map((u: any) => (
-          <li>Key: {u.APIKEY} | In: {u.InputToken} | Out: {u.OutputToken} | Date: {u.TriggerAt}</li>
-        ))}
-      </ul>
-      <br />
-      <a href="/providers">← Back</a>
+      {(usages as any[]).length === 0 ? (
+        <p style="border:3px solid #000; padding:14px; background:#f2f2f2;">No usage for this provider.</p>
+      ) : (
+        <table>
+          <thead><tr><th>Key</th><th>Input</th><th>Output</th><th>Cached</th><th>Date</th></tr></thead>
+          <tbody>
+            {(usages as any[]).map((u: any) => (
+              <tr>
+                <td style="font-family:ui-monospace,monospace; font-size:11px; word-break:break-all;">{u.APIKEY}</td>
+                <td>{u.InputToken ?? 0}</td>
+                <td>{u.OutputToken ?? 0}</td>
+                <td>{(u as any).CachedToken ?? 0}</td>
+                <td style="white-space:nowrap; font-size:12px;"><span data-ts={u.TriggerAt}>{u.TriggerAt}</span></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      <script dangerouslySetInnerHTML={{ __html: `document.querySelectorAll('[data-ts]').forEach(el=>{try{const v=el.getAttribute('data-ts');const d=new Date(v.replace(' ','T')+(v.endsWith('Z')?'':'Z'));el.textContent=d.toLocaleString();}catch{}})` }}></script>
     </Layout>
   )
 })
