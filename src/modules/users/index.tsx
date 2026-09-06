@@ -49,30 +49,6 @@ app.get('/', async (c) => {
         </div>
       )}
 
-      <h3>How to Use</h3>
-      <div class="card" style="display:grid; gap:12px;">
-        <div><strong>Base URL</strong> <code>{c.req.url.replace(/\/users.*$/, '')}/ai/openai-compatible/v1</code></div>
-        <div><strong>Auth</strong> <code>Authorization: Bearer $KARSA_API_KEY</code> <span style="font-size:12px; opacity:0.7;">— export KARSA_API_KEY="sk-kr-..."</span></div>
-        <div style="display:grid; gap:8px;">
-          <div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; font-weight:700;">List models</div>
-          <pre style="margin:0; padding:10px; border:2px solid #000; background:#fff; overflow:auto; font-size:12px;"><code>curl -H "Authorization: Bearer $KARSA_API_KEY" \
-  {c.req.url.replace(/\/users.*$/, '')}/ai/openai-compatible/v1/models</code></pre>
-        </div>
-        <div style="display:grid; gap:8px;">
-          <div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; font-weight:700;">Chat completions — prefix/model</div>
-          <pre style="margin:0; padding:10px; border:2px solid #000; background:#fff; overflow:auto; font-size:12px;"><code>{`curl -X POST ${c.req.url.replace(/\/users.*$/, '')}/ai/openai-compatible/v1/chat/completions \\
-  -H "Authorization: Bearer $KARSA_API_KEY" -H "Content-Type: application/json" \\
-  -d '{"model":"openai/gpt-4o-mini","messages":[{"role":"user","content":"hi"}]}'`}</code></pre>
-        </div>
-        <div style="display:grid; gap:8px;">
-          <div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; font-weight:700;">Combo fallback</div>
-          <pre style="margin:0; padding:10px; border:2px solid #000; background:#fff; overflow:auto; font-size:12px;"><code>{`curl -X POST ${c.req.url.replace(/\/users.*$/, '')}/ai/openai-compatible/v1/chat/completions \\
-  -H "Authorization: Bearer $KARSA_API_KEY" -H "Content-Type: application/json" \\
-  -d '{"model":"combo/fast","messages":[{"role":"user","content":"hi"}]}'`}</code></pre>
-        </div>
-        <p style="margin:0; font-size:12px;">Model format: <code>Prefix/model-id</code> or <code>combo/NAME</code>. Timeout & key fallback automatic.</p>
-      </div>
-
       <h3>User Stats</h3>
       <table border={1} cellpadding={8} style={{ borderCollapse: 'collapse', width: '100%' }}>
         <thead>
@@ -116,6 +92,32 @@ app.get('/', async (c) => {
         </tbody>
       </table>
       <script dangerouslySetInnerHTML={{ __html: `document.querySelectorAll('[data-ts]').forEach(el=>{try{const v=el.getAttribute('data-ts');const d=new Date(v.replace(' ','T')+(v.endsWith('Z')?'':'Z'));el.textContent=d.toLocaleString();}catch{}})` }}></script>
+
+      <h3>How to Use</h3>
+      <div class="card" style="display:grid; gap:12px;">
+        <div><strong>Base URL</strong> <code>{c.req.url.replace(/\/users.*$/, '')}/ai/openai-compatible/v1</code></div>
+        <div><strong>Auth</strong> <code>Authorization: Bearer $KARSA_API_KEY</code> <span style="font-size:12px; opacity:0.7;">— export KARSA_API_KEY="sk-kr-..."</span></div>
+        <div style="display:grid; gap:8px;">
+          <div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; font-weight:700;">List models</div>
+          <pre style="margin:0; padding:10px; border:2px solid #000; background:#fff; overflow:auto; font-size:12px;"><code>curl -H "Authorization: Bearer $KARSA_API_KEY" \
+  {c.req.url.replace(/\/users.*$/, '')}/ai/openai-compatible/v1/models</code></pre>
+        </div>
+        <div style="display:grid; gap:8px;">
+          <div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; font-weight:700;">Chat completions — prefix/model</div>
+          <pre style="margin:0; padding:10px; border:2px solid #000; background:#fff; overflow:auto; font-size:12px;"><code>{`curl -X POST ${c.req.url.replace(/\/users.*$/, '')}/ai/openai-compatible/v1/chat/completions \\
+  -H "Authorization: Bearer $KARSA_API_KEY" -H "Content-Type: application/json" \\
+  -d '{"model":"openai/gpt-4o-mini","messages":[{"role":"user","content":"hi"}]}'`}</code></pre>
+        </div>
+        <div style="display:grid; gap:8px;">
+          <div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; font-weight:700;">Combo fallback</div>
+          <pre style="margin:0; padding:10px; border:2px solid #000; background:#fff; overflow:auto; font-size:12px;"><code>{`curl -X POST ${c.req.url.replace(/\/users.*$/, '')}/ai/openai-compatible/v1/chat/completions \\
+  -H "Authorization: Bearer $KARSA_API_KEY" -H "Content-Type: application/json" \\
+  -d '{"model":"combo/fast","messages":[{"role":"user","content":"hi"}]}'`}</code></pre>
+        </div>
+        <p style="margin:0; font-size:12px;">Model format: <code>Prefix/model-id</code> or <code>combo/NAME</code>. Timeout & key fallback automatic.</p>
+      </div>
+
+
 
       <br />
       <a href="/providers">Go to Providers</a>
