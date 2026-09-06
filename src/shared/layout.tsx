@@ -22,7 +22,7 @@ export const Layout = (props: { children: any; user?: string }) => (
             <a href="/users/logout">Logout ({props.user})</a>
           ) : (
             <>
-              <a href="/users">Register</a>
+              <a href="/register">Register</a>
               <a href="/users/verify">Login</a>
             </>
           )}
