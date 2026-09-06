@@ -17,7 +17,24 @@ const app = new Hono<{ Bindings: Bindings }>()
 // Auth Middleware
 app.use(async (c, next) => {
   const publicPaths = ['/users/verify', '/users', '/register']
-  if (publicPaths.includes(c.req.path) || c.req.path.startsWith('/ai/openai-compatible/v1/')) {
+  const allowedUnverified = ['/users/qr', '/users/verify', '/register', '/users/logout']
+  if (c.req.path.startsWith('/ai/openai-compatible/v1/')) {
+    await next()
+    return
+  }
+  if (publicPaths.includes(c.req.path)) {
+    // also need to check if user is logged in but not verified and trying to access /users dashboard
+    const sessionToken = getCookie(c, 'session')
+    if (sessionToken) {
+      const dbTmp = getDb(c.env)
+      const sess = await dbTmp.execQuery('SELECT Username FROM Sessions WHERE Token = ? AND ExpiresAt > datetime("now")', sessionToken)
+      if (sess.length > 0) {
+        const u = await dbTmp.execQuery('SELECT IsVerified FROM Users WHERE Username = ?', sess[0].Username)
+        if (u.length > 0 && u[0].IsVerified !== 1 && c.req.path === '/users') {
+          return c.redirect(`/users/qr?username=${encodeURIComponent(sess[0].Username)}`)
+        }
+      }
+    }
     await next()
     return
   }
@@ -32,6 +49,15 @@ app.use(async (c, next) => {
 
   if (session.length === 0) {
     return c.redirect('/users/verify')
+  }
+
+  const username = session[0].Username
+  const userRows = await db.execQuery('SELECT IsVerified FROM Users WHERE Username = ?', username)
+  const isVerified = userRows.length > 0 ? userRows[0].IsVerified : 0
+  if (isVerified !== 1) {
+    if (!allowedUnverified.includes(c.req.path) && !c.req.path.startsWith('/users/qr') && !c.req.path.startsWith('/users/verify')) {
+      return c.redirect(`/users/qr?username=${encodeURIComponent(username)}`)
+    }
   }
 
   await next()
@@ -102,8 +128,9 @@ app.all('/ai/openai-compatible/v1/*', async (c) => {
 
   const db = getDb(c.env)
   // Check if API key belongs to a user
-  const users = await db.execQuery('SELECT Username FROM Users WHERE APIKEY = ?', apiKey)
+  const users = await db.execQuery('SELECT Username, IsVerified FROM Users WHERE APIKEY = ?', apiKey)
   if (users.length === 0) return c.json({ error: 'Invalid API Key' }, 401)
+  if (users[0].IsVerified !== 1) return c.json({ error: 'User not verified' }, 403)
   const username = users[0].Username
   const providers = await db.execQuery('SELECT * FROM Providers WHERE Username = ?', username)
   if (providers.length === 0) return c.json({ error: 'Provider not found for user' }, 404)

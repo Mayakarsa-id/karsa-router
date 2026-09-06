@@ -213,6 +213,7 @@ app.post('/verify', async (c) => {
   const isValid = await verifyTOTP(secret, Code as string)
 
   if (isValid) {
+    await db.execRun('UPDATE Users SET IsVerified = 1 WHERE Username = ?', Username)
     const token = crypto.randomUUID()
     const expiresAt = new Date(Date.now() + 86400000).toISOString() // 1 day
     await db.execRun('INSERT INTO Sessions (Token, Username, ExpiresAt) VALUES (?, ?, ?)', token, Username, expiresAt)

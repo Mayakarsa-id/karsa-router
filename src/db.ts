@@ -14,6 +14,7 @@ export class DBServer extends DurableObject {
         Username TEXT PRIMARY KEY,
         TotpSecret TEXT,
         APIKEY TEXT,
+        IsVerified INTEGER DEFAULT 0,
         Created_At TEXT DEFAULT CURRENT_TIMESTAMP
       );
 
@@ -51,6 +52,12 @@ export class DBServer extends DurableObject {
         FOREIGN KEY (Username) REFERENCES Users(Username) ON DELETE CASCADE
       );
     `);
+    try {
+      this.ctx.storage.sql.exec(`ALTER TABLE Users ADD COLUMN IsVerified INTEGER DEFAULT 0`);
+    } catch {}
+    try {
+      this.ctx.storage.sql.exec(`ALTER TABLE Users ADD COLUMN APIKEY TEXT`);
+    } catch {}
   }
 
   async execQuery(sql: string, ...params: any[]) {
